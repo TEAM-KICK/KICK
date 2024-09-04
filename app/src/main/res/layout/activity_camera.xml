@@ -3,10 +3,11 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <androidx.camera.view.PreviewView
-        android:id="@+id/previewView"
+    <TextureView
+        android:id="@+id/textureView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:scaleX="-1" /> <!-- 좌우 반전 -->
 
     <com.example.kick.OverlayView
         android:id="@+id/overlayView"

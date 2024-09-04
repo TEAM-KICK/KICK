@@ -27,13 +27,18 @@ import android.graphics.Color
 import android.os.Handler
 import android.os.Looper
 
+import android.view.Surface
+import android.view.TextureView
+
 
 class CameraActivity : AppCompatActivity() {
 
-    private lateinit var previewView: PreviewView
+    // private lateinit var previewView: PreviewView
+    private lateinit var textureView: TextureView
     private lateinit var overlayView: OverlayView
     private lateinit var cameraExecutor: ExecutorService
     private val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA  // Use front camera
+
 
     // YoloModel
     private lateinit var yoloModel: YoloModel
@@ -57,7 +62,7 @@ class CameraActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_camera)
 
-        previewView = findViewById(R.id.previewView)
+        textureView = findViewById(R.id.textureView)
         overlayView = findViewById(R.id.overlayView)
         cameraExecutor = Executors.newSingleThreadExecutor()
 
@@ -70,6 +75,7 @@ class CameraActivity : AppCompatActivity() {
             requestCameraPermission()
         }
     }
+
 
     private fun normalizeBitmap(bitmap: Bitmap): TensorImage {
         // TensorImage를 float32로 초기화
@@ -126,7 +132,7 @@ class CameraActivity : AppCompatActivity() {
         mainHandler.post {
             Log.d(TAG, "Main handler post started")
 
-            val bitmap = previewView.bitmap
+            val bitmap = textureView.bitmap
             if (bitmap == null) {
                 Log.d(TAG, "Bitmap is null")
                 return@post
@@ -149,7 +155,7 @@ class CameraActivity : AppCompatActivity() {
                     "$boxes")
 
 //            overlayView.setBoundingBoxes(boxes)
-            overlayView.setBoundingBoxes(boxes, previewView.width.toFloat(), previewView.height.toFloat())
+            overlayView.setBoundingBoxes(boxes, textureView.width.toFloat(), textureView.height.toFloat())
             Log.d(TAG, "Bounding boxes set on overlay view")
 
             imageProxy.close()
@@ -157,15 +163,15 @@ class CameraActivity : AppCompatActivity() {
         }
     }
 
-//    private fun resizeBitmap(bitmap: Bitmap, width: Int, height: Int): Bitmap {
-//        val matrix = Matrix()
-//        matrix.postScale(width.toFloat() / bitmap.width, height.toFloat() / bitmap.height)
-//        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
-//    }
-
     private fun resizeBitmap(bitmap: Bitmap, width: Int, height: Int): Bitmap {
-        return Bitmap.createScaledBitmap(bitmap, width, height, true)
+        val matrix = Matrix()
+        matrix.postScale(width.toFloat() / bitmap.width, height.toFloat() / bitmap.height)
+        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
     }
+
+//    private fun resizeBitmap(bitmap: Bitmap, width: Int, height: Int): Bitmap {
+//        return Bitmap.createScaledBitmap(bitmap, width, height, true)
+//    }
 
 
     private fun isCameraPermissionGranted(): Boolean {
@@ -186,7 +192,10 @@ class CameraActivity : AppCompatActivity() {
             val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
 
             val preview = Preview.Builder().build().also {
-                it.setSurfaceProvider(previewView.surfaceProvider)
+                it.setSurfaceProvider { request ->
+                    val surface = Surface(textureView.surfaceTexture)
+                    request.provideSurface(surface, cameraExecutor) { }
+                }
             }
 
             val imageAnalyzer = ImageAnalysis.Builder()
@@ -194,7 +203,7 @@ class CameraActivity : AppCompatActivity() {
                 .build()
                 .also { analysisUseCase ->
                     analysisUseCase.setAnalyzer(cameraExecutor, ImageAnalysis.Analyzer { imageProxy ->
-                        processImage(imageProxy)
+                        processImage(imageProxy)  // 이미지 처리를 위해 processImage() 호출
                     })
                 }
 

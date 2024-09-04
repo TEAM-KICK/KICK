@@ -92,7 +92,7 @@ class YoloModel(private val context: Context) {
             val confidence = buffer.float
 
 
-            if (confidence > 0.9) { // 신뢰도 임계값, 필요시 조정
+            if (confidence >= 0.25 && confidence <= 0.6 ) { // 신뢰도 임계값, 필요시 조정
                 boxes.add(RectF(xMin, yMin, xMax, yMax))
                 Log.d("YoloModel", "xMin:$xMin , yMin:$yMin, xMax:$xMax, yMax:$yMax, confidence:$confidence")
             }
