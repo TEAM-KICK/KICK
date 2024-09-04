@@ -7,6 +7,7 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.View
+import android.util.Log
 
 class OverlayView @JvmOverloads constructor(
     context: Context,
@@ -16,20 +17,53 @@ class OverlayView @JvmOverloads constructor(
 
     private val paint = Paint().apply {
         color = Color.RED
-        strokeWidth = 5f
+        strokeWidth = 10f
         style = Paint.Style.STROKE
     }
-    private var boundingBoxes: List<RectF> = emptyList()
 
-    fun setBoundingBoxes(boxes: List<RectF>) {
+    // 바운딩 박스를 그릴 때 사용할 RectF를 미리 선언
+    private var boundingBoxes: List<RectF> = emptyList()
+    private val reusableRectF = RectF() // 미리 할당하여 재사용할 RectF 객체
+
+    fun setBoundingBoxes(boxes: List<RectF>, previewWidth: Float, previewHeight: Float) {
         boundingBoxes = boxes
-        invalidate() // 이 메소드는 onDraw를 호출하여 뷰를 다시 그리게 합니다.
+
+        // OverlayView의 화면 크기 계산
+        val viewWidth = width.toFloat()
+        val viewHeight = height.toFloat()
+
+        Log.d("OverlayView", "OverlayView 크기: width=$viewWidth, height=$viewHeight")
+
+        // 모델 출력 좌표를 뷰의 좌표로 변환 (0-1 사이의 값을 절대 좌표로 변환)
+        for (box in boundingBoxes) {
+            // 모델의 출력(0-1)을 뷰 크기에 맞게 스케일링
+            reusableRectF.set(
+                box.left * viewWidth,
+                box.top * viewHeight,
+                box.right * viewWidth,
+                box.bottom * viewHeight
+            )
+
+            Log.d("OverlayView", "스케일링된 박스 좌표: left=${reusableRectF.left}, top=${reusableRectF.top}, right=${reusableRectF.right}, bottom=${reusableRectF.bottom}")
+
+            // 박스 크기가 너무 작지 않을 때만 그리기
+            if ((reusableRectF.right - reusableRectF.left) > 0.01 * viewWidth &&
+                (reusableRectF.bottom - reusableRectF.top) > 0.01 * viewHeight
+            ) {
+                Log.d("OverlayView", "Bounding box drawn: $reusableRectF")
+            }
+        }
+
+        invalidate() // onDraw를 호출하여 뷰를 다시 그리게 함
     }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
+        Log.d("OverlayView", "Actual width: $width, Actual height: $height")
         for (box in boundingBoxes) {
-            canvas.drawRect(box, paint)
+            // 스케일링된 박스를 그리기
+            canvas.drawRect(reusableRectF, paint)
         }
+
     }
 }

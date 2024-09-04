@@ -22,9 +22,11 @@ import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
 import android.graphics.Bitmap
 import android.graphics.Matrix
 import android.graphics.Canvas
+import android.graphics.Color
 
 import android.os.Handler
 import android.os.Looper
+
 
 class CameraActivity : AppCompatActivity() {
 
@@ -35,6 +37,10 @@ class CameraActivity : AppCompatActivity() {
 
     // YoloModel
     private lateinit var yoloModel: YoloModel
+
+    companion object {
+        private const val TAG = "CameraActivity"
+    }
 
     private val cameraPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -65,6 +71,56 @@ class CameraActivity : AppCompatActivity() {
         }
     }
 
+    private fun normalizeBitmap(bitmap: Bitmap): TensorImage {
+        // TensorImage를 float32로 초기화
+        val tensorImage = TensorImage(org.tensorflow.lite.DataType.FLOAT32)
+
+        // Bitmap을 TensorImage로 로드 (올바른 Bitmap 사용)
+        tensorImage.load(bitmap)
+
+        // 정규화 작업을 위해 ByteBuffer와 FloatBuffer 생성
+        val byteBuffer = tensorImage.buffer
+        val floatBuffer = FloatArray(byteBuffer.remaining())
+
+        // 정규화: 각 픽셀 값을 255.0으로 나누어 0~1 범위로 변환
+        for (i in floatBuffer.indices) {
+            floatBuffer[i] = (byteBuffer.get().toInt() and 0xFF) / 255.0f
+        }
+
+        // 정규화된 FloatBuffer를 사용해 TensorImage 업데이트
+        val normalizedTensorImage = TensorImage(org.tensorflow.lite.DataType.FLOAT32)
+        normalizedTensorImage.load(tensorImage.tensorBuffer) // 텐서 버퍼로 로드
+
+        return normalizedTensorImage
+    }
+
+
+    private fun letterboxBitmap(bitmap: Bitmap, targetWidth: Int, targetHeight: Int): Bitmap {
+        val originalWidth = bitmap.width
+        val originalHeight = bitmap.height
+
+        // 원본 이미지의 비율을 유지하며, 목표 크기에 맞추기 위해 스케일 계산
+        val scale = minOf(targetWidth / originalWidth.toFloat(), targetHeight / originalHeight.toFloat())
+
+        // 스케일된 이미지의 크기 계산
+        val scaledWidth = (originalWidth * scale).toInt()
+        val scaledHeight = (originalHeight * scale).toInt()
+
+        // 새로운 빈 비트맵 생성 (타겟 크기로)
+        val letterboxBitmap = Bitmap.createBitmap(targetWidth, targetHeight, bitmap.config)
+        val canvas = Canvas(letterboxBitmap)
+
+        // 빈 배경을 채움 (여기서는 검정색)
+        canvas.drawColor(Color.BLACK)
+
+        // 스케일된 이미지를 중앙에 그리기
+        val left = (targetWidth - scaledWidth) / 2f
+        val top = (targetHeight - scaledHeight) / 2f
+        canvas.drawBitmap(bitmap, left, top, null)
+
+        return letterboxBitmap
+    }
+
     private fun processImage(imageProxy: ImageProxy) {
         val mainHandler = Handler(Looper.getMainLooper())
         mainHandler.post {
@@ -78,16 +134,22 @@ class CameraActivity : AppCompatActivity() {
 
             Log.d(TAG, "Bitmap retrieved successfully")
 
-            val resizedBitmap = resizeBitmap(bitmap, 640, 640) // 모델의 입력 크기로 조정
+            // 모델 입력 크기로 조정
+            val resizedBitmap = resizeBitmap(bitmap, 640, 640)
+//            val resizedBitmap = letterboxBitmap(bitmap, 640, 640)
             Log.d(TAG, "Bitmap resized")
 
-            val tensorImage = TensorImage.fromBitmap(resizedBitmap)
-            Log.d(TAG, "TensorImage created")
+            // 정규화된 TensorImage 생성
+            val tensorImage = normalizeBitmap(resizedBitmap)
+            Log.d(TAG, "TensorImage created and normalized")
 
+            // YOLO 모델 추론
             val boxes = yoloModel.runInference(tensorImage)
-            Log.d(TAG, "Inference run successfully, found ${boxes.size} boxes")
+            Log.d(TAG, "Inference run successfully, found ${boxes.size} boxes," +
+                    "$boxes")
 
-            overlayView.setBoundingBoxes(boxes)
+//            overlayView.setBoundingBoxes(boxes)
+            overlayView.setBoundingBoxes(boxes, previewView.width.toFloat(), previewView.height.toFloat())
             Log.d(TAG, "Bounding boxes set on overlay view")
 
             imageProxy.close()
@@ -153,7 +215,4 @@ class CameraActivity : AppCompatActivity() {
         cameraExecutor.shutdown()
     }
 
-    companion object {
-        private const val TAG = "CameraActivity"
-    }
 }
