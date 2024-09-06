@@ -1,107 +1,135 @@
 package com.example.kick
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.RectF
 import android.util.Log
-import org.tensorflow.lite.Interpreter
-import org.tensorflow.lite.support.image.TensorImage
-import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
+import org.pytorch.IValue
+import org.pytorch.Module
+import org.pytorch.Tensor
+import java.io.File
 import java.io.FileInputStream
+import java.io.FileOutputStream
 import java.io.IOException
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
+import java.nio.FloatBuffer
 import java.nio.MappedByteBuffer
 import java.nio.channels.FileChannel
-import android.graphics.Bitmap
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+
 
 class YoloModel(private val context: Context) {
 
-    private var interpreter: Interpreter
-    private val outputShape = intArrayOf(1, 8400, 6) // YOLO output: [batch, boxes, classes + box coordinates]
+    private val module: Module
 
     init {
-        interpreter = Interpreter(loadModelFile("yolov8n-face_float32.tflite"))
-
-        // 모델 입력 크기를 확인하는 부분
-        val inputShape = interpreter.getInputTensor(0).shape() // [1, height, width, channels]
-        val inputHeight = inputShape[1]
-        val inputWidth = inputShape[2]
-        val inputChannels = inputShape[3]
-
-        Log.d("YoloModel", "Model input shape: Height=$inputHeight, Width=$inputWidth, Channels=$inputChannels")
+        // Load the TorchScript model from assets
+        module = Module.load(assetFilePath(context, "yolov8n-face.torchscript"))
     }
 
+    // Helper method to get asset file path
     @Throws(IOException::class)
-    private fun loadModelFile(modelFileName: String): MappedByteBuffer {
-        val fileDescriptor = context.assets.openFd(modelFileName)
-        val inputStream = FileInputStream(fileDescriptor.fileDescriptor)
-        val fileChannel = inputStream.channel
-        val startOffset = fileDescriptor.startOffset
-        val declaredLength = fileDescriptor.declaredLength
-        return fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength)
+    private fun assetFilePath(context: Context, assetName: String): String {
+        val file = File(context.filesDir, assetName)
+        if (file.exists() && file.length() > 0) return file.absolutePath
+
+        context.assets.open(assetName).use { inputStream ->
+            FileOutputStream(file).use { outputStream ->
+                val buffer = ByteArray(4 * 1024)
+                var read: Int
+                while (inputStream.read(buffer).also { read = it } != -1) {
+                    outputStream.write(buffer, 0, read)
+                }
+                outputStream.flush()
+            }
+        }
+        return file.absolutePath
     }
 
-    fun runInference(image: TensorImage): List<RectF> {
-        // 입력 버퍼 준비
-        val inputBuffer = convertBitmapToByteBuffer(image.bitmap, 640, 640)
+    fun runInference(bitmap: Bitmap): List<RectF> {
+        // Prepare the input tensor
+        val inputTensor = preprocessImage(bitmap)
 
-        // 출력 버퍼 준비
-        val outputBuffer = ByteBuffer.allocateDirect(4 * 8400 * 6).order(ByteOrder.nativeOrder())
+        // Run the model - directly receive the output tensor
+        val outputTensor = module.forward(IValue.from(inputTensor)).toTensor()
 
-        Log.d("YoloModel", "Running inference...")
-        // 모델 실행
-        interpreter.run(inputBuffer, outputBuffer)
-
-        Log.d("YoloModel", "Inference completed. Processing output...")
-
-        return processOutput(outputBuffer)
+        // Process the output and return bounding boxes
+        return processOutput(outputTensor)
     }
 
-    // 입력 이미지를 ByteBuffer로 변환하는 메소드
-    private fun convertBitmapToByteBuffer(bitmap: Bitmap, width: Int, height: Int): ByteBuffer {
-        val byteBuffer = ByteBuffer.allocateDirect(4 * width * height * 3) // 640 * 640 * 3 채널, float32 타입
-        byteBuffer.order(ByteOrder.nativeOrder())
+    private fun preprocessImage(bitmap: Bitmap): Tensor {
+        // Create a buffer that matches the expected shape [1, 3, 640, 640]
+        val inputBuffer = FloatBuffer.allocate(1 * 3 * 640 * 640)
 
-        val intValues = IntArray(width * height)
+        val intValues = IntArray(640 * 640)  // Prepare to hold pixel data
         bitmap.getPixels(intValues, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
 
-        var pixel = 0
-        for (i in 0 until height) {
-            for (j in 0 until width) {
-                val value = intValues[pixel++]
-
-                // RGB 값 추출 및 정규화
-                byteBuffer.putFloat(((value shr 16 and 0xFF) / 255.0f)) // Red
-                byteBuffer.putFloat(((value shr 8 and 0xFF) / 255.0f))  // Green
-                byteBuffer.putFloat(((value and 0xFF) / 255.0f))       // Blue
+        var pixelIndex = 0
+        for (i in 0 until 640) {
+            for (j in 0 until 640) {
+                val pixelValue = intValues[pixelIndex++]
+                // Normalize and add pixel data to the buffer
+                inputBuffer.put(((pixelValue shr 16 and 0xFF) / 255.0f))  // Red
+                inputBuffer.put(((pixelValue shr 8 and 0xFF) / 255.0f))   // Green
+                inputBuffer.put(((pixelValue and 0xFF) / 255.0f))         // Blue
             }
         }
 
-        return byteBuffer
+        // Convert to a PyTorch tensor
+        return Tensor.fromBlob(inputBuffer.array(), longArrayOf(1, 3, 640, 640))
     }
 
-    private fun processOutput(buffer: ByteBuffer): List<RectF> {
-        buffer.rewind()
+    private fun sigmoid(x: Float): Float {
+        return (1 / (1 + Math.exp(-x.toDouble()))).toFloat()
+    }
+
+    private fun debugOutputShape(output: Tensor) {
+        // Tensor의 shape 확인
+        val shape = output.shape()
+        Log.d("YoloModel", "Tensor shape: ${shape.joinToString(", ")}")
+    }
+
+
+    private fun processOutput(output: Tensor): List<RectF> {
+        debugOutputShape(output)
+        
+
         val boxes = mutableListOf<RectF>()
 
-        while (buffer.hasRemaining()) {
-            val xMin = buffer.float
-            val yMin = buffer.float
-            val xMax = buffer.float
-            val yMax = buffer.float
-            val confidence = buffer.float
+        // Output tensor에서 데이터를 FloatBuffer로 추출
+        val outputData = output.dataAsFloatArray
+//        Log.d("YoloModel", "Output data: ${outputData.joinToString(", ")}")
+        // YOLO 모델은 각 박스가 [xmin, ymin, xmax, ymax, confidence, class]로 구성됨
+        val numBoxes = outputData.size / 5
 
-
-            if (confidence >= 0.25 && confidence <= 0.6 ) { // 신뢰도 임계값, 필요시 조정
+        // 각 경계 상자의 좌표와 신뢰도(confidence) 추출
+        for (i in 0 until numBoxes) {
+            val offset = i * 5
+//            val xMin = outputData[offset]
+//            val yMin = outputData[offset + 1]
+//            val xMax = outputData[offset + 2]
+//            val yMax = outputData[offset + 3]
+            val xCenter = outputData[offset]     // center x
+            val yCenter = outputData[offset + 1]  // center y
+            val width = outputData[offset + 2]    // width
+            val height = outputData[offset + 3]
+            val confidence = outputData[offset + 4] // raw confidence
+//            val confidence = sigmoid(rawConfidence) // sigmoid 적용
+//
+////            val cls = outputData[offset + 5]
+//
+//
+            val xMin = xCenter - width / 2
+            val yMin = yCenter - height / 2
+            val xMax = xCenter + width / 2
+            val yMax = yCenter + height / 2
+            // 신뢰도 필터링 (confidence threshold)
+            if (confidence >= 0.25) {
                 boxes.add(RectF(xMin, yMin, xMax, yMax))
-                Log.d("YoloModel", "xMin:$xMin , yMin:$yMin, xMax:$xMax, yMax:$yMax, confidence:$confidence")
+//                Log.d("YoloModel", "xMin:$xMin , yMin:$yMin, xMax:$xMax, yMax:$yMax, confidence:$confidence")
             }
         }
 
         return boxes
-    }
-
-    fun close() {
-        interpreter.close()
     }
 }

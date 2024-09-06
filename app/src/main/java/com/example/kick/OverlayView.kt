@@ -36,21 +36,21 @@ class OverlayView @JvmOverloads constructor(
         Log.d("OverlayView", "PreviewView/TextureView size: width=$previewWidth, height=$previewHeight")
         // 모델 출력 좌표를 뷰의 좌표로 변환 (0-1 사이의 값을 절대 좌표로 변환)
         for (box in boundingBoxes) {
-            // 모델의 출력(0-1)을 뷰 크기에 맞게 스케일링
+
             reusableRectF.set(
-                box.left * viewWidth,
-                box.top * viewHeight,
-                box.right * viewWidth,
-                box.bottom * viewHeight
+                box.left *  (viewWidth/ 640)  ,    // Scale the left coordinate
+                box.top *   (viewHeight/ 640) ,    // Scale the top coordinate
+                box.right * (viewWidth / 640) ,   // Scale the right coordinate
+                box.bottom * (viewHeight / 640)  // Scale the bottom coordinate
             )
 
-            Log.d("OverlayView", "스케일링된 박스 좌표: left=${reusableRectF.left}, top=${reusableRectF.top}, right=${reusableRectF.right}, bottom=${reusableRectF.bottom}")
+            Log.d("OverlayView", "Scaled boxes: left=${reusableRectF.left}, top=${reusableRectF.top}, right=${reusableRectF.right}, bottom=${reusableRectF.bottom}")
 
             // 박스 크기가 너무 작지 않을 때만 그리기
             if ((reusableRectF.right - reusableRectF.left) > 0.1 * viewWidth &&
                 (reusableRectF.bottom - reusableRectF.top) > 0.1 * viewHeight
             ) {
-                Log.d("OverlayView", "Bounding box drawn: $reusableRectF")
+//                Log.d("OverlayView", "Bounding box drawn: $reusableRectF")
             }
         }
 
