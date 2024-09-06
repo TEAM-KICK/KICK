@@ -38,10 +38,10 @@ class OverlayView @JvmOverloads constructor(
         for (box in boundingBoxes) {
 
             reusableRectF.set(
-                box.left *  (viewWidth/ 640)  ,    // Scale the left coordinate
-                box.top *   (viewHeight/ 640) ,    // Scale the top coordinate
-                box.right * (viewWidth / 640) ,   // Scale the right coordinate
-                box.bottom * (viewHeight / 640)  // Scale the bottom coordinate
+                box.left *  (width/ 640)  ,    // Scale the left coordinate
+                box.top *   (height/ 640) ,    // Scale the top coordinate
+                box.right  * (width / 640) ,   // Scale the right coordinate
+                box.bottom  * (height / 640)  // Scale the bottom coordinate
             )
 
             Log.d("OverlayView", "Scaled boxes: left=${reusableRectF.left}, top=${reusableRectF.top}, right=${reusableRectF.right}, bottom=${reusableRectF.bottom}")

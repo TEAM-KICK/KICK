@@ -83,16 +83,19 @@ class YoloModel(private val context: Context) {
         return (1 / (1 + Math.exp(-x.toDouble()))).toFloat()
     }
 
-    private fun debugOutputShape(output: Tensor) {
-        // Tensor의 shape 확인
-        val shape = output.shape()
-        Log.d("YoloModel", "Tensor shape: ${shape.joinToString(", ")}")
+
+    private fun debugOutput(output: Tensor) {
+        // Tensor에서 데이터를 FloatArray로 추출
+        val outputData = output.dataAsFloatArray
+
+        // Output 데이터 출력
+        Log.d("YoloModel", "Tensor shape: ${output.shape().joinToString(", ")}")
+        Log.d("YoloModel", "Output data: ${outputData.joinToString(", ")}")
     }
 
-
     private fun processOutput(output: Tensor): List<RectF> {
-        debugOutputShape(output)
-        
+
+        debugOutput(output)
 
         val boxes = mutableListOf<RectF>()
 
@@ -115,10 +118,7 @@ class YoloModel(private val context: Context) {
             val height = outputData[offset + 3]
             val confidence = outputData[offset + 4] // raw confidence
 //            val confidence = sigmoid(rawConfidence) // sigmoid 적용
-//
-////            val cls = outputData[offset + 5]
-//
-//
+
             val xMin = xCenter - width / 2
             val yMin = yCenter - height / 2
             val xMax = xCenter + width / 2
@@ -126,7 +126,7 @@ class YoloModel(private val context: Context) {
             // 신뢰도 필터링 (confidence threshold)
             if (confidence >= 0.25) {
                 boxes.add(RectF(xMin, yMin, xMax, yMax))
-//                Log.d("YoloModel", "xMin:$xMin , yMin:$yMin, xMax:$xMax, yMax:$yMax, confidence:$confidence")
+                Log.d("YoloModel", "xMin:$xMin , yMin:$yMin, xMax:$xMax, yMax:$yMax, confidence:$confidence")
             }
         }
 

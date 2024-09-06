@@ -73,8 +73,8 @@ class CameraActivity : AppCompatActivity() {
         mainHandler.post {
             val bitmap = previewView.bitmap ?: return@post  // Get bitmap from PreviewView
 
-//            val resizedBitmap = resizeBitmap(bitmap, 640, 640)
-            val resizedBitmap = letterboxBitmap(bitmap, 640, 640)
+            val resizedBitmap = resizeBitmap(bitmap, 640, 640)
+//            val resizedBitmap = letterboxBitmap(bitmap, 640, 640)
             // YOLO TorchScript inference (preprocess and run inference)
             val boxes = yoloModel.runInference(resizedBitmap)
 
@@ -117,9 +117,18 @@ class CameraActivity : AppCompatActivity() {
         return letterboxBitmap
     }
 
-    private fun resizeBitmap(bitmap: Bitmap, width: Int, height: Int): Bitmap {
-        val matrix = Matrix()
-        matrix.postScale(width.toFloat() / bitmap.width, height.toFloat() / bitmap.height)
+//    private fun resizeBitmap(bitmap: Bitmap, width: Int, height: Int): Bitmap {
+//        val matrix = Matrix()
+//        matrix.postScale(width.toFloat() / bitmap.width, height.toFloat() / bitmap.height)
+//        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+//    }
+
+    private fun resizeBitmap(bitmap: Bitmap, targetWidth: Int, targetHeight: Int): Bitmap {
+        val matrix = android.graphics.Matrix()
+        val scaleX = targetWidth.toFloat() / bitmap.width
+        val scaleY = targetHeight.toFloat() / bitmap.height
+        matrix.postScale(scaleX, scaleY)
+
         return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
     }
 
