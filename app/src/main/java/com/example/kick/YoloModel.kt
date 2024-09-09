@@ -101,28 +101,33 @@ class YoloModel(private val context: Context) {
 
         // Output tensor에서 데이터를 FloatBuffer로 추출
         val outputData = output.dataAsFloatArray
-//        Log.d("YoloModel", "Output data: ${outputData.joinToString(", ")}")
-        // YOLO 모델은 각 박스가 [xmin, ymin, xmax, ymax, confidence, class]로 구성됨
+
+
         val numBoxes = outputData.size / 5
 
         // 각 경계 상자의 좌표와 신뢰도(confidence) 추출
         for (i in 0 until numBoxes) {
+
             val offset = i * 5
-//            val xMin = outputData[offset]
-//            val yMin = outputData[offset + 1]
-//            val xMax = outputData[offset + 2]
-//            val yMax = outputData[offset + 3]
             val xCenter = outputData[offset]     // center x
             val yCenter = outputData[offset + 1]  // center y
             val width = outputData[offset + 2]    // width
             val height = outputData[offset + 3]
-            val confidence = outputData[offset + 4] // raw confidence
-//            val confidence = sigmoid(rawConfidence) // sigmoid 적용
+            val confidence = outputData[offset+4] // raw confidence
+
+//            val xCenter = outputData[i] // xCenter는 0~8399
+//            val yCenter = outputData[i + 8400] // yCenter는 8400~16799
+//            val width = outputData[i + 16800] // width는 16800~25199
+//            val height = outputData[i + 25200] // height는 25200~33599
+//            val confidence = outputData[i + 33600] // confidence는 33600~42000
+//            val confidence = sigmoid(rawconfidence) // sigmoid 적용
 
             val xMin = xCenter - width / 2
             val yMin = yCenter - height / 2
             val xMax = xCenter + width / 2
             val yMax = yCenter + height / 2
+
+
             // 신뢰도 필터링 (confidence threshold)
             if (confidence >= 0.25) {
                 boxes.add(RectF(xMin, yMin, xMax, yMax))

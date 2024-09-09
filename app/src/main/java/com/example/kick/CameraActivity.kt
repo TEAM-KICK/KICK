@@ -24,6 +24,10 @@ import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.RectF
 
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
+
 
 class CameraActivity : AppCompatActivity() {
 
@@ -68,13 +72,18 @@ class CameraActivity : AppCompatActivity() {
     }
 
 
+
     private fun processImage(imageProxy: ImageProxy) {
         val mainHandler = Handler(Looper.getMainLooper())
         mainHandler.post {
-            val bitmap = previewView.bitmap ?: return@post  // Get bitmap from PreviewView
+            val resizedBitmap = imageToBitmap(imageProxy)
+            Log.d("Camera", "Resized Bitmap width: ${resizedBitmap.width}, height: ${resizedBitmap.height}")
+            //            val bitmap = previewView.bitmap ?: return@post  // Get bitmap from PreviewView
 
-            val resizedBitmap = resizeBitmap(bitmap, 640, 640)
+//            val resizedBitmap = resizeBitmap(bitmap, 640, 640)
 //            val resizedBitmap = letterboxBitmap(bitmap, 640, 640)
+//            val resizedBitmap = resizeAndPadForYOLO(bitmap, 640)
+
             // YOLO TorchScript inference (preprocess and run inference)
             val boxes = yoloModel.runInference(resizedBitmap)
 
@@ -83,6 +92,39 @@ class CameraActivity : AppCompatActivity() {
 
             imageProxy.close()  // Close the image proxy
         }
+    }
+
+    private fun resizeAndPadForYOLO(bitmap: Bitmap, targetSize: Int): Bitmap {
+        val aspectRatio = bitmap.width.toFloat() / bitmap.height.toFloat()
+
+        val newWidth: Int
+        val newHeight: Int
+        val paddingX: Int
+        val paddingY: Int
+
+        // 가로가 세로보다 긴 경우
+        if (aspectRatio > 1) {
+            newWidth = targetSize
+            newHeight = (targetSize / aspectRatio).toInt()
+            paddingX = 0
+            paddingY = (targetSize - newHeight) / 2
+        } else {
+            newWidth = (targetSize * aspectRatio).toInt()
+            newHeight = targetSize
+            paddingX = (targetSize - newWidth) / 2
+            paddingY = 0
+        }
+
+        // 비율에 맞게 리사이즈된 이미지를 생성
+        val resizedBitmap = Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
+
+        // 새로운 빈 Bitmap을 만들고 검은색으로 채워서 패딩을 추가
+        val outputBitmap = Bitmap.createBitmap(targetSize, targetSize, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(outputBitmap)
+        canvas.drawColor(Color.BLACK)  // 패딩 부분을 검은색으로 채움
+        canvas.drawBitmap(resizedBitmap, paddingX.toFloat(), paddingY.toFloat(), null)
+
+        return outputBitmap
     }
 
     fun letterboxBitmap(bitmap: Bitmap, targetWidth: Int, targetHeight: Int): Bitmap {
@@ -117,11 +159,11 @@ class CameraActivity : AppCompatActivity() {
         return letterboxBitmap
     }
 
-//    private fun resizeBitmap(bitmap: Bitmap, width: Int, height: Int): Bitmap {
-//        val matrix = Matrix()
-//        matrix.postScale(width.toFloat() / bitmap.width, height.toFloat() / bitmap.height)
-//        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
-//    }
+    private fun imageToBitmap(imageProxy: ImageProxy): Bitmap {
+        val bitmap = imageProxy.toBitmap()
+        return Bitmap.createScaledBitmap(bitmap, 640, 640, true)
+    }
+
 
     private fun resizeBitmap(bitmap: Bitmap, targetWidth: Int, targetHeight: Int): Bitmap {
         val matrix = android.graphics.Matrix()
