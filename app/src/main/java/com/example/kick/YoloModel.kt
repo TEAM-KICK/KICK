@@ -4,27 +4,32 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.RectF
 import android.util.Log
-import org.pytorch.IValue
-import org.pytorch.Module
-import org.pytorch.Tensor
+import org.tensorflow.lite.Interpreter
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
-import java.nio.FloatBuffer
-import java.nio.MappedByteBuffer
-import java.nio.channels.FileChannel
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-
+import java.nio.channels.FileChannel
 
 class YoloModel(private val context: Context) {
 
-    private val module: Module
+    private lateinit var interpreter: Interpreter
 
     init {
-        // Load the TorchScript model from assets
-        module = Module.load(assetFilePath(context, "yolov8n-face.torchscript"))
+        loadModel()  // Load the TensorFlow Lite model
+    }
+
+    // Load the TensorFlow Lite model from assets
+    private fun loadModel() {
+        val modelPath = assetFilePath(context, "yolov8n-face_float32.tflite")
+        val modelFile = File(modelPath)
+        if (modelFile.exists()) {
+            interpreter = Interpreter(modelFile)
+        } else {
+            Log.e("YoloModel", "Model file not found!")
+        }
     }
 
     // Helper method to get asset file path
@@ -46,92 +51,68 @@ class YoloModel(private val context: Context) {
         return file.absolutePath
     }
 
-    fun runInference(bitmap: Bitmap): List<RectF> {
-        // Prepare the input tensor
-        val inputTensor = preprocessImage(bitmap)
+    // Preprocess the image to be used as input to the model
+    private fun preprocessImage(bitmap: Bitmap, inputSize: Int): ByteBuffer {
+        val resizedBitmap = Bitmap.createScaledBitmap(bitmap, inputSize, inputSize, true)
+        val inputBuffer = ByteBuffer.allocateDirect(1 * inputSize * inputSize * 3 * 4)  // 1 batch, 3 channels (RGB), 4 bytes per float
+        inputBuffer.order(ByteOrder.nativeOrder())
 
-        // Run the model - directly receive the output tensor
-        val outputTensor = module.forward(IValue.from(inputTensor)).toTensor()
+        val pixels = IntArray(inputSize * inputSize)
+        resizedBitmap.getPixels(pixels, 0, inputSize, 0, 0, inputSize, inputSize)
 
-        // Process the output and return bounding boxes
-        return processOutput(outputTensor)
-    }
+        for (pixel in pixels) {
+            // Normalize each pixel (RGB) from [0, 255] to [0, 1] and add to buffer
+            val r = (pixel shr 16 and 0xFF) / 255.0f
+            val g = (pixel shr 8 and 0xFF) / 255.0f
+            val b = (pixel and 0xFF) / 255.0f
 
-    private fun preprocessImage(bitmap: Bitmap): Tensor {
-        // Create a buffer that matches the expected shape [1, 3, 640, 640]
-        val inputBuffer = FloatBuffer.allocate(1 * 3 * 640 * 640)
-
-        val intValues = IntArray(640 * 640)  // Prepare to hold pixel data
-        bitmap.getPixels(intValues, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
-
-        var pixelIndex = 0
-        for (i in 0 until 640) {
-            for (j in 0 until 640) {
-                val pixelValue = intValues[pixelIndex++]
-                // Normalize and add pixel data to the buffer
-                inputBuffer.put(((pixelValue shr 16 and 0xFF) / 255.0f))  // Red
-                inputBuffer.put(((pixelValue shr 8 and 0xFF) / 255.0f))   // Green
-                inputBuffer.put(((pixelValue and 0xFF) / 255.0f))         // Blue
-            }
+            inputBuffer.putFloat(r)
+            inputBuffer.putFloat(g)
+            inputBuffer.putFloat(b)
         }
-
-        // Convert to a PyTorch tensor
-        return Tensor.fromBlob(inputBuffer.array(), longArrayOf(1, 3, 640, 640))
+        return inputBuffer
     }
 
-    private fun sigmoid(x: Float): Float {
-        return (1 / (1 + Math.exp(-x.toDouble()))).toFloat()
+    // Run inference on the model with a preprocessed image
+    fun runInference(bitmap: Bitmap): List<RectF> {
+        val inputSize = 640  // Assuming the model requires 640x640 input size
+        val inputBuffer = preprocessImage(bitmap, inputSize)
+
+        // Prepare output buffer to receive results (shape: [1, 5, 8400])
+        val outputBuffer = ByteBuffer.allocateDirect(4 * 5 * 8400)
+        outputBuffer.order(ByteOrder.nativeOrder())
+
+        // Run inference
+        interpreter.run(inputBuffer, outputBuffer)
+
+        // Process the output to extract bounding boxes
+        return processOutput(outputBuffer, bitmap.width, bitmap.height)
     }
 
-
-    private fun debugOutput(output: Tensor) {
-        // Tensor에서 데이터를 FloatArray로 추출
-        val outputData = output.dataAsFloatArray
-
-        // Output 데이터 출력
-        Log.d("YoloModel", "Tensor shape: ${output.shape().joinToString(", ")}")
-        Log.d("YoloModel", "Output data: ${outputData.joinToString(", ")}")
-    }
-
-    private fun processOutput(output: Tensor): List<RectF> {
-
-        debugOutput(output)
+    // Post-process the output from the model to extract bounding boxes
+    private fun processOutput(outputBuffer: ByteBuffer, imageWidth: Int, imageHeight: Int): List<RectF> {
+        outputBuffer.rewind()
+        val outputData = FloatArray(5 * 8400)
+        outputBuffer.asFloatBuffer().get(outputData)
 
         val boxes = mutableListOf<RectF>()
+        for (i in 0 until 8400) {
+            val xCenter = outputData[i]
+            val yCenter = outputData[8400 + i]
+            val width = outputData[2*8400 + i]
+            val height = outputData[3*8400 + i]
+            val confidence = outputData[4*8400 + i]
 
-        // Output tensor에서 데이터를 FloatBuffer로 추출
-        val outputData = output.dataAsFloatArray
+            // Only consider boxes with confidence above a threshold
+            if (confidence > 0.5) {
+                Log.d("YoloModel", "xCenter:$xCenter, yCenter:$yCenter, Width:$width, Height:$height, Confidence:$confidence ")
+                // Convert relative coordinates to absolute pixel values
+                val xMin = (xCenter - width / 2) * 1080
+                val yMin = (yCenter - height / 2) * 2127
+                val xMax = (xCenter + width / 2) * 1080
+                val yMax = (yCenter + height / 2) * 2127
 
-
-        val numBoxes = outputData.size / 5
-
-        // 각 경계 상자의 좌표와 신뢰도(confidence) 추출
-        for (i in 0 until numBoxes) {
-
-            val offset = i * 5
-            val xCenter = outputData[offset]     // center x
-            val yCenter = outputData[offset + 1]  // center y
-            val width = outputData[offset + 2]    // width
-            val height = outputData[offset + 3]
-            val confidence = outputData[offset+4] // raw confidence
-
-//            val xCenter = outputData[i] // xCenter는 0~8399
-//            val yCenter = outputData[i + 8400] // yCenter는 8400~16799
-//            val width = outputData[i + 16800] // width는 16800~25199
-//            val height = outputData[i + 25200] // height는 25200~33599
-//            val confidence = outputData[i + 33600] // confidence는 33600~42000
-//            val confidence = sigmoid(rawconfidence) // sigmoid 적용
-
-            val xMin = xCenter - width / 2
-            val yMin = yCenter - height / 2
-            val xMax = xCenter + width / 2
-            val yMax = yCenter + height / 2
-
-
-            // 신뢰도 필터링 (confidence threshold)
-            if (confidence >= 0.25) {
                 boxes.add(RectF(xMin, yMin, xMax, yMax))
-                Log.d("YoloModel", "xMin:$xMin , yMin:$yMin, xMax:$xMax, yMax:$yMax, confidence:$confidence")
             }
         }
 

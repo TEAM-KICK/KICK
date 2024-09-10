@@ -25,59 +25,45 @@ class OverlayView @JvmOverloads constructor(
     private var boundingBoxes: List<RectF> = emptyList()
     private val reusableRectF = RectF() // 미리 할당하여 재사용할 RectF 객체
 
-    private var previewWidth: Float = 1.0f
-    private var previewHeight: Float = 1.0f
-
     fun setBoundingBoxes(boxes: List<RectF>, previewWidth: Float, previewHeight: Float) {
-        this.boundingBoxes = boxes
-        this.previewWidth = previewWidth
-        this.previewHeight = previewHeight
-        invalidate()  // onDraw를 호출하여 뷰를 다시 그리게 함
+        boundingBoxes = boxes
+
+        // OverlayView의 화면 크기 계산
+        val viewWidth = width.toFloat()
+        val viewHeight = height.toFloat()
+
+        Log.d("OverlayView", "OverlayView 크기: width=$viewWidth, height=$viewHeight")
+        Log.d("OverlayView", "PreviewView/TextureView size: width=$previewWidth, height=$previewHeight")
+        // 모델 출력 좌표를 뷰의 좌표로 변환 (0-1 사이의 값을 절대 좌표로 변환)
+        for (box in boundingBoxes) {
+
+            reusableRectF.set(
+                box.left,
+                box.top ,
+                box.right,
+                box.bottom,
+            )
+
+            Log.d("OverlayView", "Scaled boxes: left=${reusableRectF.left}, top=${reusableRectF.top}, right=${reusableRectF.right}, bottom=${reusableRectF.bottom}")
+
+            // 박스 크기가 너무 작지 않을 때만 그리기
+            if ((reusableRectF.right - reusableRectF.left) > 0.1 * viewWidth &&
+                (reusableRectF.bottom - reusableRectF.top) > 0.1 * viewHeight
+            ) {
+//                Log.d("OverlayView", "Bounding box drawn: $reusableRectF")
+            }
+        }
+
+        invalidate() // onDraw를 호출하여 뷰를 다시 그리게 함
     }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-
-        // OverlayView actual size
-        val viewWidth = width.toFloat()
-        val viewHeight = height.toFloat()
-
-        // Calculate padding if there's an aspect ratio mismatch
-        Log.d("OverlayView", "previewWidth=$previewWidth, previewHeight=$previewHeight")
-        val previewAspectRatio = previewWidth / previewHeight
-        val viewAspectRatio = viewWidth / viewHeight
-        Log.d("OverlayView", "viewAspectRatio: $viewAspectRatio")
-
-        var horizontalPadding = 0f
-        var verticalPadding = 0f
-
-        if (viewAspectRatio > previewAspectRatio) {
-            // Horizontal padding occurs
-            horizontalPadding = (viewWidth - (previewAspectRatio * viewHeight)) / 2
-        } else {
-            // Vertical padding occurs
-            verticalPadding = (viewHeight - (viewWidth / previewAspectRatio)) / 2
-        }
-
-        // Log the padding values
-        Log.d("OverlayView", "horizontalPadding=$horizontalPadding, verticalPadding=$verticalPadding")
-
-        // Adjust bounding boxes based on the padding
+        Log.d("OverlayView", "Actual width: $width, Actual height: $height")
         for (box in boundingBoxes) {
-            val scaleX = (viewWidth - 2 * horizontalPadding) / previewWidth
-            val scaleY = (viewHeight - 2 * verticalPadding) / previewHeight
-
-            reusableRectF.set(
-                (box.left * scaleX) + horizontalPadding,
-                (box.top * scaleY) + 523,
-                (box.right * scaleX) + horizontalPadding,
-                (box.bottom * scaleY) + 523
-            )
-
-//            Log.d("OverlayView", "Scaled boxes: left=${reusableRectF.left}, top=${reusableRectF.top}, right=${reusableRectF.right}, bottom=${reusableRectF.bottom}")
-
-            // Draw the bounding box
+            // 스케일링된 박스를 그리기
             canvas.drawRect(reusableRectF, paint)
         }
+
     }
 }
