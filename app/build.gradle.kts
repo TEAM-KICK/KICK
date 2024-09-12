@@ -13,12 +13,20 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
-
+        ndkVersion = "21.3.6528147"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
         }
+        ndk {
+            abiFilters.add("armeabi-v7a")
+            abiFilters.add("arm64-v8a")
+            abiFilters.add("x86")
+            abiFilters.add("x86_64")
+        }
+
     }
+
 
     buildTypes {
         release {
@@ -66,4 +74,18 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    implementation("androidx.camera:camera-core:1.3.4")
+    implementation("androidx.camera:camera-camera2:1.3.4")
+    implementation("androidx.camera:camera-lifecycle:1.3.4")
+    implementation("androidx.camera:camera-view:1.3.4")
+    implementation("androidx.appcompat:appcompat:1.5.1")
+
+    implementation ("org.tensorflow:tensorflow-lite:2.16.1")
+    implementation ("org.tensorflow:tensorflow-lite-support:0.4.4")
+    implementation ("org.tensorflow:tensorflow-lite-task-vision:0.4.4")
+
+    implementation ("org.pytorch:pytorch_android:2.1.0")
+//    implementation ("org.pytorch:pytorch_android_lite:2.1.0")
+//    implementation ("org.pytorch:pytorch_android_torchvision_lite:2.1.0")
 }
