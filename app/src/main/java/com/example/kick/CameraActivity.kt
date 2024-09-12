@@ -18,10 +18,6 @@ import android.graphics.Matrix
 import android.os.Handler
 import android.os.Looper
 
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Paint
-import android.graphics.Rect
 import android.graphics.RectF
 
 import java.io.File
@@ -43,6 +39,7 @@ class CameraActivity : AppCompatActivity() {
         private const val TAG = "CameraActivity"
     }
 
+    /* --- Camera Permission --- */
     private val cameraPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
@@ -52,6 +49,17 @@ class CameraActivity : AppCompatActivity() {
             Toast.makeText(this, "Camera permission is required", Toast.LENGTH_SHORT).show()
             finish()  // Close the activity if permission is denied
         }
+    }
+
+    private fun isCameraPermissionGranted(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.CAMERA
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun requestCameraPermission() {
+        cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -71,10 +79,17 @@ class CameraActivity : AppCompatActivity() {
         }
     }
 
+
+    /* --- Execute Yolo --- */
     private fun rotateBitmap(source: Bitmap, rotationDegrees: Int): Bitmap {
         val matrix = Matrix()
         matrix.postRotate(rotationDegrees.toFloat())
         return Bitmap.createBitmap(source, 0, 0, source.width, source.height, matrix, true)
+    }
+
+    private fun imageToBitmap(imageProxy: ImageProxy): Bitmap {
+        val bitmap = imageProxy.toBitmap()
+        return Bitmap.createScaledBitmap(bitmap, 640, 640, true)
     }
 
     private fun saveBitmapToFile(bitmap: Bitmap, fileName: String) {
@@ -96,76 +111,33 @@ class CameraActivity : AppCompatActivity() {
     private fun processImage(imageProxy: ImageProxy) {
         val mainHandler = Handler(Looper.getMainLooper())
         mainHandler.post {
+            // calc rotation degree
             val rotationDegrees = imageProxy.imageInfo.rotationDegrees
-            Log.d("Camera", "ratationDegree: $rotationDegrees")
+//            Log.d("Camera", "ratationDegree: $rotationDegrees")
+
+            // resize image
             val resizedBitmap = imageToBitmap(imageProxy)
-            Log.d("Camera", "Resized Bitmap width: ${resizedBitmap.width}, height: ${resizedBitmap.height}")
-            //            val bitmap = previewView.bitmap ?: return@post  // Get bitmap from PreviewView
+//            Log.d("Camera", "Resized Bitmap width: ${resizedBitmap.width}, height: ${resizedBitmap.height}")
+
+            // rotate image
             val rotatedBitmap = rotateBitmap(resizedBitmap, rotationDegrees)
 
+            // save resized image
             saveBitmapToFile(rotatedBitmap, "resized_image.png")
 
-
-            // YOLO TorchScript inference (preprocess and run inference)
-            val boxes = yoloModel.runInference(rotatedBitmap)
+            // YOLO Tensorflow Lite inference
+            val boxes: List<Pair<RectF, Float>> = yoloModel.runInference(rotatedBitmap,
+                overlayView.width, overlayView.height)
 
             // Adjust bounding boxes and display them on the overlay
-            overlayView.setBoundingBoxes(boxes, previewView.width.toFloat(), previewView.height.toFloat())
+            overlayView.setBoundingBoxes(boxes)
 
             imageProxy.close()  // Close the image proxy
         }
     }
 
 
-
-    fun letterboxBitmap(bitmap: Bitmap, targetWidth: Int, targetHeight: Int): Bitmap {
-        val originalWidth = bitmap.width
-        val originalHeight = bitmap.height
-
-        // Calculate the scale to maintain the aspect ratio
-        val scale = minOf(targetWidth / originalWidth.toFloat(), targetHeight / originalHeight.toFloat())
-
-        // Calculate the new scaled dimensions
-        val scaledWidth = (originalWidth * scale).toInt()
-        val scaledHeight = (originalHeight * scale).toInt()
-
-        // Create a new empty bitmap with the target dimensions
-        val letterboxBitmap = Bitmap.createBitmap(targetWidth, targetHeight, bitmap.config)
-
-        // Create a canvas to draw on the new bitmap
-        val canvas = Canvas(letterboxBitmap)
-
-        // Fill the canvas with black (letterbox padding)
-        canvas.drawColor(Color.BLACK)
-
-        // Calculate the position to center the image on the canvas
-        val left = (targetWidth - scaledWidth) / 2
-        val top = (targetHeight - scaledHeight) / 2
-
-        // Draw the scaled bitmap onto the canvas using Rect for both source and destination
-        val srcRect = Rect(0, 0, bitmap.width, bitmap.height)
-        val dstRect = Rect(left, top, left + scaledWidth, top + scaledHeight)
-        canvas.drawBitmap(bitmap, srcRect, dstRect, null)
-
-        return letterboxBitmap
-    }
-
-    private fun imageToBitmap(imageProxy: ImageProxy): Bitmap {
-        val bitmap = imageProxy.toBitmap()
-        return Bitmap.createScaledBitmap(bitmap, 640, 640, true)
-    }
-
-    private fun isCameraPermissionGranted(): Boolean {
-        return ContextCompat.checkSelfPermission(
-            this,
-            Manifest.permission.CAMERA
-        ) == PackageManager.PERMISSION_GRANTED
-    }
-
-    private fun requestCameraPermission() {
-        cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-    }
-
+    /* --- Start Camera --- */
     private fun startCamera() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
 
