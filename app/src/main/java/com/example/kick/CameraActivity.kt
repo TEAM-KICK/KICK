@@ -30,7 +30,7 @@ class CameraActivity : AppCompatActivity() {
     private lateinit var previewView: PreviewView
     private lateinit var overlayView: OverlayView
     private lateinit var cameraExecutor: ExecutorService
-    private val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+//    private val cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
 
     // YoloModel
     private lateinit var yoloModel: YoloModel
@@ -63,6 +63,19 @@ class CameraActivity : AppCompatActivity() {
         cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
     }
 
+    private fun checkCameras() {
+        val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
+        cameraProviderFuture.addListener({
+            val cameraProvider = cameraProviderFuture.get()
+
+            // 전면 및 후면 카메라가 있는지 확인
+            val hasFrontCamera = cameraProvider.hasCamera(CameraSelector.DEFAULT_FRONT_CAMERA)
+            val hasBackCamera = cameraProvider.hasCamera(CameraSelector.DEFAULT_BACK_CAMERA)
+
+            Log.d("Check", "Front Camera: $hasFrontCamera, Back Camera: $hasBackCamera")
+        }, ContextCompat.getMainExecutor(this))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_camera)
@@ -75,6 +88,7 @@ class CameraActivity : AppCompatActivity() {
         emotionModel = EmotionModel(this)
 
         if (isCameraPermissionGranted()) {
+            checkCameras()
             startCamera()
         } else {
             requestCameraPermission()
@@ -177,6 +191,8 @@ class CameraActivity : AppCompatActivity() {
         cameraProviderFuture.addListener({
             val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
 
+            val cameraSelector = getCameraSelector()
+
             val preview = Preview.Builder().build().also {
                 it.setSurfaceProvider(previewView.surfaceProvider)  // Use PreviewView's SurfaceProvider
             }
@@ -200,6 +216,15 @@ class CameraActivity : AppCompatActivity() {
             }
 
         }, ContextCompat.getMainExecutor(this))
+    }
+
+    private fun getCameraSelector(): CameraSelector {
+        val cameraProvider = ProcessCameraProvider.getInstance(this).get()
+        return if (cameraProvider.hasCamera(CameraSelector.DEFAULT_FRONT_CAMERA)) {
+            CameraSelector.DEFAULT_FRONT_CAMERA
+        } else {
+            CameraSelector.DEFAULT_BACK_CAMERA
+        }
     }
 
     override fun onDestroy() {
