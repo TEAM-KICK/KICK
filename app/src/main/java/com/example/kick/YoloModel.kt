@@ -121,7 +121,7 @@ class YoloModel(private val context: Context) {
             actualImageHeight = (overlayViewWidth / imageAspectRatio).toInt()
             verticalPadding = (overlayViewHeight - actualImageHeight) / 2f
         }
-        Log.d("Padding", "horizontalPadding:$horizontalPadding, verticalPadding:$verticalPadding, actualWidth:$actualImageWidth, actualHeight:$actualImageHeight")
+//        Log.d("Padding", "horizontalPadding:$horizontalPadding, verticalPadding:$verticalPadding, actualWidth:$actualImageWidth, actualHeight:$actualImageHeight")
         // 좌표 변환 (좌우 및 상하 여백을 고려하여 변환)
         val xMin = (xCenter - width / 2) * actualImageWidth + horizontalPadding
         val xMax = (xCenter + width / 2) * actualImageWidth + horizontalPadding

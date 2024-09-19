@@ -23,7 +23,7 @@ import android.graphics.RectF
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
-
+import com.example.kick.DetectionResult
 
 class CameraActivity : AppCompatActivity() {
 
@@ -34,6 +34,7 @@ class CameraActivity : AppCompatActivity() {
 
     // YoloModel
     private lateinit var yoloModel: YoloModel
+    private lateinit var emotionModel: EmotionModel
 
     companion object {
         private const val TAG = "CameraActivity"
@@ -71,6 +72,7 @@ class CameraActivity : AppCompatActivity() {
         cameraExecutor = Executors.newSingleThreadExecutor()
 
         yoloModel = YoloModel(this)
+        emotionModel = EmotionModel(this)
 
         if (isCameraPermissionGranted()) {
             startCamera()
@@ -87,8 +89,7 @@ class CameraActivity : AppCompatActivity() {
         return Bitmap.createBitmap(source, 0, 0, source.width, source.height, matrix, true)
     }
 
-    private fun imageToBitmap(imageProxy: ImageProxy): Bitmap {
-        val bitmap = imageProxy.toBitmap()
+    private fun resizeBitmap(bitmap: Bitmap): Bitmap {
         return Bitmap.createScaledBitmap(bitmap, 640, 640, true)
     }
 
@@ -109,30 +110,62 @@ class CameraActivity : AppCompatActivity() {
     }
 
     private fun processImage(imageProxy: ImageProxy) {
-        val mainHandler = Handler(Looper.getMainLooper())
-        mainHandler.post {
-            // calc rotation degree
-            val rotationDegrees = imageProxy.imageInfo.rotationDegrees
-//            Log.d("Camera", "ratationDegree: $rotationDegrees")
+            val mainHandler = Handler(Looper.getMainLooper())
+            mainHandler.post {
+                // Rotation 처리
+                val rotationDegrees = imageProxy.imageInfo.rotationDegrees
 
-            // resize image
-            val resizedBitmap = imageToBitmap(imageProxy)
-//            Log.d("Camera", "Resized Bitmap width: ${resizedBitmap.width}, height: ${resizedBitmap.height}")
+                val bitmap = imageProxy.toBitmap()
+                // 이미지 크기 조정 및 회전
+                val resizedBitmap = resizeBitmap(bitmap)
+                val rotatedBitmap = rotateBitmap(resizedBitmap, rotationDegrees)
 
-            // rotate image
-            val rotatedBitmap = rotateBitmap(resizedBitmap, rotationDegrees)
+//                val rotatedBitmap = rotateBitmap(bitmap, rotationDegrees)
+//                val resizedBitmap = resizeBitmap(rotatedBitmap)
+                Log.d("Rotate", "Rotated Bitmap width: ${rotatedBitmap.width}, height: ${rotatedBitmap.height}")
+                saveBitmapToFile(rotatedBitmap, "rotate.png")
+                // YOLO 모델을 사용하여 얼굴 탐지
+                val boxes: List<Pair<RectF, Float>> = yoloModel.runInference(rotatedBitmap, overlayView.width, overlayView.height)
 
-            // save resized image
-            saveBitmapToFile(rotatedBitmap, "resized_image.png")
+                // 감정 분류 및 박스에 추가
+                val detectionResults = mutableListOf<DetectionResult>()
+                for ((box, confidence) in boxes) {
+                    // 얼굴 이미지 추출
+                    val faceBitmap = Bitmap.createBitmap(
+                        rotatedBitmap,
+                        box.left.toInt(),
+                        box.top.toInt(),
+                        box.right.toInt(),
+                        box.bottom.toInt()
 
-            // YOLO Tensorflow Lite inference
-            val boxes: List<Pair<RectF, Float>> = yoloModel.runInference(rotatedBitmap,
-                overlayView.width, overlayView.height)
+                    )
 
-            // Adjust bounding boxes and display them on the overlay
-            overlayView.setBoundingBoxes(boxes)
+                    // 감정 분류 수행
+                    val emotionIndex = emotionModel.classifyEmotion(faceBitmap)
+                    val emotionLabel = getEmotionLabel(emotionIndex)
 
-            imageProxy.close()  // Close the image proxy
+                    // DetectionResult 객체에 바운딩 박스, 신뢰도, 감정 레이블 저장
+                    detectionResults.add(DetectionResult(box, confidence, emotionLabel))
+                }
+
+                // 감정 분류 결과와 함께 박스를 표시
+                overlayView.setBoundingBoxes(detectionResults)
+
+                imageProxy.close()  // ImageProxy 닫기
+            }
+    }
+
+    // 감정 인덱스를 레이블로 변환하는 함수
+    private fun getEmotionLabel(emotionIndex: Int): String {
+        return when (emotionIndex) {
+            0 -> "Happy"
+            1 -> "Sad"
+            2 -> "Angry"
+            3 -> "Surprise"
+            4 -> "Fear"
+            5 -> "Disgust"
+            6 -> "Neutral"
+            else -> "Unknown"
         }
     }
 
