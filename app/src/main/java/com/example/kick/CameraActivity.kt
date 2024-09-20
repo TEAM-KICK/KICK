@@ -136,8 +136,8 @@ class CameraActivity : AppCompatActivity() {
 
 //                val rotatedBitmap = rotateBitmap(bitmap, rotationDegrees)
 //                val resizedBitmap = resizeBitmap(rotatedBitmap)
-                Log.d("Rotate", "Rotated Bitmap width: ${rotatedBitmap.width}, height: ${rotatedBitmap.height}")
-                saveBitmapToFile(rotatedBitmap, "rotate.png")
+//                Log.d("Rotate", "Rotated Bitmap width: ${rotatedBitmap.width}, height: ${rotatedBitmap.height}")
+
                 // YOLO 모델을 사용하여 얼굴 탐지
                 val boxes: List<Pair<RectF, Float>> = yoloModel.runInference(rotatedBitmap, overlayView.width, overlayView.height)
 
@@ -145,15 +145,15 @@ class CameraActivity : AppCompatActivity() {
                 val detectionResults = mutableListOf<DetectionResult>()
                 for ((box, confidence) in boxes) {
                     // 얼굴 이미지 추출
+//                    Log.d("chech", "box.left:${box.left.to}" )
                     val faceBitmap = Bitmap.createBitmap(
                         rotatedBitmap,
-                        box.left.toInt(),
-                        box.top.toInt(),
-                        box.right.toInt(),
-                        box.bottom.toInt()
-
+                        (box.left * rotatedBitmap.width).toInt(),
+                        (box.top * rotatedBitmap.height).toInt(),
+                        ((box.right - box.left) * rotatedBitmap.width).toInt(),
+                        ((box.bottom - box.top) * rotatedBitmap.height).toInt()
                     )
-
+//                    saveBitmapToFile(faceBitmap, "face.png")
                     // 감정 분류 수행
                     val emotionIndex = emotionModel.classifyEmotion(faceBitmap)
                     val emotionLabel = getEmotionLabel(emotionIndex)
