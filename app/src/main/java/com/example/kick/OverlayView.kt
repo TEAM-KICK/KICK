@@ -8,9 +8,7 @@ import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.View
 import android.util.Log
-
 import android.graphics.PorterDuff
-import android.graphics.PorterDuffXfermode
 
 class OverlayView @JvmOverloads constructor(
     context: Context,
@@ -30,12 +28,12 @@ class OverlayView @JvmOverloads constructor(
         style = Paint.Style.FILL
     }
 
-    // 바운딩 박스를 그릴 때 사용할 RectF를 미리 선언
-    private var boundingBoxes: List<Pair<RectF, Float>> = emptyList()
-    private val reusableRectF = RectF() // 미리 할당하여 재사용할 RectF 객체
+    // DetectionResult 리스트를 사용하도록 수정
+    private var detectionResults: List<DetectionResult> = emptyList()
 
-    fun setBoundingBoxes(boxes: List<Pair<RectF, Float>>) {
-        boundingBoxes = boxes
+    // 감정 분류 결과와 함께 바운딩 박스를 설정하는 함수
+    fun setBoundingBoxes(results: List<DetectionResult>) {
+        detectionResults = results
         invalidate() // onDraw를 호출하여 뷰를 다시 그리게 함
     }
 
@@ -43,13 +41,61 @@ class OverlayView @JvmOverloads constructor(
         super.onDraw(canvas)
         Log.d("OverlayView", "Actual width: $width, Actual height: $height")
         canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
-        for ((box, confidence) in boundingBoxes) {
-            // 바운딩 박스를 그리기 (예: 사각형)
-            canvas.drawRect(box, boxpaint)
+
+        // 각 DetectionResult에 대해 바운딩 박스, confidence, emotionLabel을 그리기
+        for (result in detectionResults) {
+            // 바운딩 박스를 그리기 전에 adjustForPadding을 통해 좌표 변환
+            val adjustedBox = adjustForPadding(
+                result.boundingBox.left,
+                result.boundingBox.top,
+                result.boundingBox.right,
+                result.boundingBox.bottom,
+                width,  // OverlayView의 실제 너비
+                height  // OverlayView의 실제 높이
+            )
+
+            // 조정된 바운딩 박스 그리기
+            canvas.drawRect(adjustedBox, boxpaint)
 
             // confidence 값을 텍스트로 표시
-            canvas.drawText("%.2f".format(confidence), box.left, box.top - 10, textPaint)
+            canvas.drawText("%.2f".format(result.confidence), adjustedBox.left, adjustedBox.top - 10, textPaint)
+
+            // emotionLabel 값을 텍스트로 표시
+            canvas.drawText(result.emotionLabel, adjustedBox.left, adjustedBox.top - 80, textPaint)
+        }
+    }
+
+
+    fun adjustForPadding(left: Float, top: Float, right: Float, bottom: Float, overlayViewWidth: Int, overlayViewHeight: Int): RectF {
+        val inputSize = 640  // YOLO 모델의 입력 크기 (640x640)
+        val imageAspectRatio = inputSize.toFloat() / inputSize.toFloat()
+        val viewAspectRatio = overlayViewWidth.toFloat() / overlayViewHeight.toFloat()
+
+        var actualImageWidth = overlayViewWidth
+        var actualImageHeight = overlayViewHeight
+        var horizontalPadding = 0f
+        var verticalPadding = 0f
+
+        // 좌우 여백이 생긴 경우
+        if (viewAspectRatio < imageAspectRatio) {
+            actualImageHeight = overlayViewHeight
+            actualImageWidth = (overlayViewHeight * imageAspectRatio).toInt()
+            horizontalPadding = (overlayViewWidth - actualImageWidth) / 2f
+        }
+        // 상하 여백이 생긴 경우
+        else {
+            actualImageWidth = overlayViewWidth
+            actualImageHeight = (overlayViewWidth / imageAspectRatio).toInt()
+            verticalPadding = (overlayViewHeight - actualImageHeight) / 2f
         }
 
+        // 좌표 변환 (이미 계산된 left, top, right, bottom 사용)
+        val adjustedLeft = left * actualImageWidth + horizontalPadding
+        val adjustedRight = right * actualImageWidth + horizontalPadding
+        val adjustedTop = top * actualImageHeight + verticalPadding
+        val adjustedBottom = bottom * actualImageHeight + verticalPadding
+
+        return RectF(adjustedLeft, adjustedTop, adjustedRight, adjustedBottom)  // 변환된 좌표 반환
     }
+
 }

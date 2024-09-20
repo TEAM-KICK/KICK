@@ -74,7 +74,7 @@ class YoloModel(private val context: Context) {
         return inputBuffer
     }
     // Post-process the output from the model to extract bounding boxes
-    private fun processOutput(outputBuffer: ByteBuffer, overlayViewWidth: Int, overlayViewHeight: Int): List<Pair<RectF, Float>> {
+    private fun processOutput(outputBuffer: ByteBuffer): List<Pair<RectF, Float>> {
         outputBuffer.rewind()
         val outputData = FloatArray(5 * 8400)
         outputBuffer.asFloatBuffer().get(outputData)
@@ -83,53 +83,60 @@ class YoloModel(private val context: Context) {
         for (i in 0 until 8400) {
             val xCenter = outputData[i]
             val yCenter = outputData[8400 + i]
-            val width = outputData[2*8400 + i]
-            val height = outputData[3*8400 + i]
-            val confidence = outputData[4*8400 + i]
+            val width = outputData[2 * 8400 + i]
+            val height = outputData[3 * 8400 + i]
+            val confidence = outputData[4 * 8400 + i]
 
             // Only consider boxes with confidence above a threshold
-            if (confidence > 0.55) {
-                Log.d("YoloModel", "xCenter:$xCenter, yCenter:$yCenter, Width:$width, Height:$height, Confidence:$confidence ")
-                val adjustedRect = adjustForPadding(xCenter, yCenter, width, height, overlayViewWidth, overlayViewHeight)
-                boxes.add(Pair(adjustedRect, confidence))
+            if (confidence > 0.45) {
+//                Log.d("YoloModel", "xCenter:$xCenter, yCenter:$yCenter, Width:$width, Height:$height, Confidence:$confidence ")
 
+                // 순수한 바운딩 박스 좌표 계산 (YOLO 모델의 640x640 이미지 기준)
+                val left = xCenter - width / 2
+                val right = xCenter + width / 2
+                val top = yCenter - height / 2
+                val bottom = yCenter + height / 2
+
+                // 순수 YOLO 출력 좌표로 바운딩 박스 생성
+                val rect = RectF(left, top, right, bottom)
+                boxes.add(Pair(rect, confidence))
             }
         }
 
         return boxes
     }
 
-    fun adjustForPadding(xCenter: Float, yCenter: Float, width: Float, height: Float, overlayViewWidth: Int, overlayViewHeight: Int): RectF {
-        val inputSize = 640  // 모델의 입력 크기 (640x640)
-        val imageAspectRatio = inputSize.toFloat() / inputSize.toFloat()
-        val viewAspectRatio = overlayViewWidth.toFloat() / overlayViewHeight.toFloat()
-
-        var actualImageWidth = overlayViewWidth
-        var actualImageHeight = overlayViewHeight
-        var horizontalPadding = 0f
-        var verticalPadding = 0f
-        Log.d("Padding", "viewAspectRatio:$viewAspectRatio, imageAspectRatio:$imageAspectRatio")
-        // 좌우 여백이 생긴 경우 (이미지가 세로로 더 긴 경우)
-        if (viewAspectRatio < imageAspectRatio) {
-            actualImageHeight = overlayViewHeight
-            actualImageWidth = (overlayViewHeight * imageAspectRatio).toInt()
-            horizontalPadding = (overlayViewWidth - actualImageWidth) / 2f
-        }
-        // 상하 여백이 생긴 경우 (이미지가 가로로 더 긴 경우)
-        else {
-            actualImageWidth = overlayViewWidth
-            actualImageHeight = (overlayViewWidth / imageAspectRatio).toInt()
-            verticalPadding = (overlayViewHeight - actualImageHeight) / 2f
-        }
-        Log.d("Padding", "horizontalPadding:$horizontalPadding, verticalPadding:$verticalPadding, actualWidth:$actualImageWidth, actualHeight:$actualImageHeight")
-        // 좌표 변환 (좌우 및 상하 여백을 고려하여 변환)
-        val xMin = (xCenter - width / 2) * actualImageWidth + horizontalPadding
-        val xMax = (xCenter + width / 2) * actualImageWidth + horizontalPadding
-        val yMin = (yCenter - height / 2) * actualImageHeight + verticalPadding
-        val yMax = (yCenter + height / 2) * actualImageHeight + verticalPadding
-
-        return RectF(xMin, yMin, xMax, yMax)  // 여백 적용된 좌표 반환
-    }
+//    fun adjustForPadding(xCenter: Float, yCenter: Float, width: Float, height: Float, overlayViewWidth: Int, overlayViewHeight: Int): RectF {
+//        val inputSize = 640  // 모델의 입력 크기 (640x640)
+//        val imageAspectRatio = inputSize.toFloat() / inputSize.toFloat()
+//        val viewAspectRatio = overlayViewWidth.toFloat() / overlayViewHeight.toFloat()
+//
+//        var actualImageWidth = overlayViewWidth
+//        var actualImageHeight = overlayViewHeight
+//        var horizontalPadding = 0f
+//        var verticalPadding = 0f
+//        Log.d("Padding", "viewAspectRatio:$viewAspectRatio, imageAspectRatio:$imageAspectRatio")
+//        // 좌우 여백이 생긴 경우 (이미지가 세로로 더 긴 경우)
+//        if (viewAspectRatio < imageAspectRatio) {
+//            actualImageHeight = overlayViewHeight
+//            actualImageWidth = (overlayViewHeight * imageAspectRatio).toInt()
+//            horizontalPadding = (overlayViewWidth - actualImageWidth) / 2f
+//        }
+//        // 상하 여백이 생긴 경우 (이미지가 가로로 더 긴 경우)
+//        else {
+//            actualImageWidth = overlayViewWidth
+//            actualImageHeight = (overlayViewWidth / imageAspectRatio).toInt()
+//            verticalPadding = (overlayViewHeight - actualImageHeight) / 2f
+//        }
+////        Log.d("Padding", "horizontalPadding:$horizontalPadding, verticalPadding:$verticalPadding, actualWidth:$actualImageWidth, actualHeight:$actualImageHeight")
+//        // 좌표 변환 (좌우 및 상하 여백을 고려하여 변환)
+//        val xMin = (xCenter - width / 2) * actualImageWidth + horizontalPadding
+//        val xMax = (xCenter + width / 2) * actualImageWidth + horizontalPadding
+//        val yMin = (yCenter - height / 2) * actualImageHeight + verticalPadding
+//        val yMax = (yCenter + height / 2) * actualImageHeight + verticalPadding
+//
+//        return RectF(xMin, yMin, xMax, yMax)  // 여백 적용된 좌표 반환
+//    }
 
 
 
@@ -146,6 +153,6 @@ class YoloModel(private val context: Context) {
         interpreter.run(inputBuffer, outputBuffer)
 
         // Process the output to extract bounding boxes
-        return processOutput(outputBuffer, overlayViewWidth, overlayViewHeight)
+        return processOutput(outputBuffer)
     }
 }
