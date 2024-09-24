@@ -1,4 +1,4 @@
-package com.example.kick
+package com.example.kick.ui
 
 import android.content.Context
 import android.graphics.Canvas
@@ -9,6 +9,7 @@ import android.util.AttributeSet
 import android.view.View
 import android.util.Log
 import android.graphics.PorterDuff
+import com.example.kick.cv.DetectionResult
 
 class OverlayView @JvmOverloads constructor(
     context: Context,

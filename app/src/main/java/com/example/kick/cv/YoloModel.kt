@@ -1,4 +1,4 @@
-package com.example.kick
+package com.example.kick.cv
 
 import android.content.Context
 import android.graphics.Bitmap

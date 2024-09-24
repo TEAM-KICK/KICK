@@ -1,4 +1,4 @@
-package com.example.kick
+package com.example.kick.ui
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -19,11 +19,14 @@ import android.os.Handler
 import android.os.Looper
 
 import android.graphics.RectF
+import com.example.kick.R
 
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
-import com.example.kick.DetectionResult
+import com.example.kick.cv.DetectionResult
+import com.example.kick.cv.EmotionModel
+import com.example.kick.cv.YoloModel
 
 class CameraActivity : AppCompatActivity() {
 

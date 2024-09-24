@@ -1,4 +1,4 @@
-package com.example.kick
+package com.example.kick.ui
 
 import android.os.Bundle
 //import androidx.activity.ComponentActivity
@@ -17,6 +17,7 @@ import android.content.Intent
 // import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import android.widget.Button
+import com.example.kick.R
 
 class MainActivity : AppCompatActivity() {
 

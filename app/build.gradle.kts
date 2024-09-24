@@ -85,7 +85,6 @@ dependencies {
     implementation ("org.tensorflow:tensorflow-lite-support:0.4.4")
     implementation ("org.tensorflow:tensorflow-lite-task-vision:0.4.4")
 
-    implementation ("org.pytorch:pytorch_android:2.1.0")
-//    implementation ("org.pytorch:pytorch_android_lite:2.1.0")
-//    implementation ("org.pytorch:pytorch_android_torchvision_lite:2.1.0")
+    implementation ("com.google.android.material:material:1.9.0")
+
 }
