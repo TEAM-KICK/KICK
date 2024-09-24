@@ -7,26 +7,31 @@
     android:layout_marginLeft="30dp"
     android:layout_alignParentTop="true"
     android:layout_marginTop="141dp"
-    android:background="@drawable/alarm1"
-    />
+    android:background="@drawable/alarm1">
 
-    <!-- drawable/alarm1.xml -->
-<vector
-xmlns:android="http://schemas.android.com/apk/res/android"
-xmlns:aapt="http://schemas.android.com/aapt"
-android:width="300dp"
-android:height="55dp"
-android:viewportWidth="300"
-android:viewportHeight="55"
-    >
-<group>
-    <clip-path
-        android:pathData="M4 0H296C298.209 0 300 1.79086 300 4V51C300 53.2091 298.209 55 296 55H4C1.79086 55 0 53.2091 0 51V4C0 1.79086 1.79086 0 4 0Z"
-        />
-    <path
-        android:pathData="M4 0H296C298.209 0 300 1.79086 300 4V51C300 53.2091 298.209 55 296 55H4C1.79086 55 0 53.2091 0 51V4C0 1.79086 1.79086 0 4 0Z"
-        android:strokeWidth="2"
-        android:strokeColor="#FAE100"
-        />
-</group>
-</vector>
+    <!-- 시간 텍스트뷰 -->
+    <TextView
+        android:id="@+id/alarmTimeText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_marginStart="16dp"
+        android:text="9:00 오전"
+        android:textSize="18sp"
+        android:textColor="#FFFFFF" />
+
+    <!-- 알람 활성화 스위치 -->
+    <Switch
+        android:id="@+id/alarmSwitch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_centerVertical="true"
+        android:layout_marginEnd="16dp"
+        android:checked="true"
+        android:textOff=""
+        android:textOn=""
+        android:thumbTint="@color/white"
+        android:trackTint="@color/yellow" />
+
+</RelativeLayout>
