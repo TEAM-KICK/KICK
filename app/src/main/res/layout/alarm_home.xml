@@ -10,9 +10,10 @@
     <!--        android:layout_alignParentTop="true"-->
 
     <!-- RecyclerView for displaying alarm items -->
+
     <TextView
         android:id="@+id/kick"
-        android:layout_width="100dp"
+        android:layout_width="wrap_content"
         android:layout_height="45dp"
         android:layout_marginLeft="30dp"
         android:layout_marginTop="41dp"
@@ -27,20 +28,21 @@
         android:layout_weight="1" />
 
     <!-- 알람 추가 버튼 -->
+    <!--        android:background="@drawable/ic_add"-->
+
     <Button
         android:id="@+id/btnAddAlarm"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="left|bottom|center"
-        android:text="@string/add_button"
-        android:contentDescription="Add Alarm Button" />
-    <!--        android:background="@drawable/ic_add"-->
+        android:contentDescription="Add Alarm Button"
+        android:text="@string/add_button" />
 
     <Button
-        android:id="@+id/testface"
+        android:id="@+id/btntestface"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="right|bottom|center"
-        android:text="@string/test_button"
-        android:contentDescription="Face Test" />
+        android:contentDescription="Face Test"
+        android:text="@string/test_button" />
 </LinearLayout>

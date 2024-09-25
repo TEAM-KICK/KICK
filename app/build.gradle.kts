@@ -86,5 +86,6 @@ dependencies {
     implementation ("org.tensorflow:tensorflow-lite-task-vision:0.4.4")
 
     implementation ("com.google.android.material:material:1.9.0")
+    implementation ("androidx.recyclerview:recyclerview:1.2.1")
 
 }

@@ -20,7 +20,8 @@
         android:textSize="18sp"
         android:textColor="#FFFFFF" />
 
-    <!-- 알람 활성화 스위치 -->
+
+
     <Switch
         android:id="@+id/alarmSwitch"
         android:layout_width="wrap_content"

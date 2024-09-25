@@ -1,28 +1,29 @@
 package com.example.kick.alarm
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.kick.R
-//import com.example.kick.model.Alarm
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 class AlarmListActivity : AppCompatActivity() {
 
     private lateinit var alarmListView: RecyclerView
     private lateinit var addAlarmButton: FloatingActionButton
-    private lateinit var alarmListAdapter: AlarmListAdapter
+    private lateinit var alarmListAdapter: AlarmAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_alarm_list)
+        setContentView(R.layout.alarm_home)
 
-        alarmListView = findViewById(R.id.alarmListView)
-        addAlarmButton = findViewById(R.id.addAlarmButton)
+        alarmListView = findViewById(R.id.recyclerViewAlarms)
+        addAlarmButton = findViewById(R.id.btnAddAlarm)
 
-        alarmListAdapter = AlarmListAdapter(loadAlarms(), this)
+        // 알람 목록 로드 후 어댑터 설정
+        alarmListAdapter = AlarmAdapter(loadAlarms(), this)
         alarmListView.layoutManager = LinearLayoutManager(this)
         alarmListView.adapter = alarmListAdapter
 
@@ -32,11 +33,16 @@ class AlarmListActivity : AppCompatActivity() {
         }
     }
 
-    private fun loadAlarms(): List<Alarm> {
-        // 실제 저장된 알람을 불러오는 로직 (SharedPreferences, SQLite 등)
-        return listOf(
-                Alarm(1, 9, 0, true),
-                Alarm(2, 10, 30, false)
-        )
+    // 여러 알람을 불러오는 함수
+    private fun loadAlarms(): MutableList<Alarm> {  // 반환 타입을 MutableList로 변경
+        val sharedPref = getSharedPreferences("alarm_prefs", Context.MODE_PRIVATE)
+        val alarmJsonSet = sharedPref.getStringSet("alarms", null) ?: return mutableListOf()  // 빈 MutableList 반환
+
+        val alarms = mutableListOf<Alarm>()
+        for (alarmJson in alarmJsonSet) {
+            alarms.add(Alarm.fromJson(alarmJson))
+        }
+
+        return alarms  // MutableList 반환
     }
 }
