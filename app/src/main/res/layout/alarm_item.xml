@@ -1,12 +1,11 @@
 <RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/alarm1"
-    android:layout_width="300dp"
+    android:layout_width="match_parent"
     android:layout_height="55dp"
-    android:layout_alignParentLeft="true"
-    android:layout_marginLeft="30dp"
-    android:layout_alignParentTop="true"
-    android:layout_marginTop="141dp"
+
+    android:layout_centerInParent="true"
+
     android:layout_margin="8dp"
     android:padding="0dp"
     android:background="@drawable/alarm1">
