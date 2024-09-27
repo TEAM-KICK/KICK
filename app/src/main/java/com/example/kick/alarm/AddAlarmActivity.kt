@@ -2,6 +2,7 @@ package com.example.kick.alarm
 
 import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import android.widget.Button
 import android.widget.TimePicker
 import androidx.appcompat.app.AppCompatActivity
@@ -27,7 +28,7 @@ class AddAlarmActivity : AppCompatActivity() {
 
             // 알람 저장
             saveAlarm(alarm)
-
+            Log.d("AddAlarmActivity", "Alarm saved: ${alarm.toJson()}")
             finish()
         }
     }

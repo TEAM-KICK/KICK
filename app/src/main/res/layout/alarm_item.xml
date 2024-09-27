@@ -7,6 +7,8 @@
     android:layout_marginLeft="30dp"
     android:layout_alignParentTop="true"
     android:layout_marginTop="141dp"
+    android:layout_margin="8dp"
+    android:padding="0dp"
     android:background="@drawable/alarm1">
 
     <!-- 시간 텍스트뷰 -->
@@ -26,6 +28,8 @@
         android:id="@+id/alarmSwitch"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:minWidth="48dp"
+        android:minHeight="48dp"
         android:layout_alignParentEnd="true"
         android:layout_centerVertical="true"
         android:layout_marginEnd="16dp"
