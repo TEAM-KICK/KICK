@@ -1,32 +1,27 @@
 package com.example.kick.ui
 
 import android.os.Bundle
-//import androidx.activity.ComponentActivity
-//import androidx.activity.compose.setContent
-//import androidx.activity.enableEdgeToEdge
-//import androidx.compose.foundation.layout.fillMaxSize
-//import androidx.compose.foundation.layout.padding
-//import androidx.compose.material3.Scaffold
-//import androidx.compose.material3.Text
-//import androidx.compose.runtime.Composable
-//import androidx.compose.ui.Modifier
-//import androidx.compose.ui.tooling.preview.Preview
-//import com.example.kick.ui.theme.KICKTheme
-
 import android.content.Intent
-// import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import android.widget.Button
 import com.example.kick.R
+import com.example.kick.alarm.AddAlarmActivity
 
 class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.main_activity)
+        setContentView(R.layout.alarm_home)
+
+        // ADD 버튼을 누르면 AddAlarmActivity 실행
+        val addAlarmButton: Button = findViewById(R.id.btnAddAlarm)
+        addAlarmButton.setOnClickListener {
+            val intent = Intent(this, AddAlarmActivity::class.java)
+            startActivity(intent)
+        }
 
         // Assuming you have a button in your MainActivity layout to start CameraActivity
-        val startCameraButton: Button = findViewById(R.id.startCameraButton)
+        val startCameraButton: Button = findViewById(R.id.btntestface)
         startCameraButton.setOnClickListener {
             val intent = Intent(this, CameraActivity::class.java)
             startActivity(intent)

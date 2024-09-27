@@ -33,6 +33,11 @@
             android:name=".ui.CameraActivity"
             android:exported="false"
             android:theme="@style/Theme.KICK" />
+
+        <activity
+            android:name=".alarm.AddAlarmActivity"
+            android:exported="true"
+            android:theme="@style/Theme.KICK" />
     </application>
 
 </manifest>

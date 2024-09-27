@@ -54,4 +54,10 @@ class AlarmAdapter(
         alarms.removeAt(position)
         notifyItemRemoved(position)
     }
+
+    fun updateAlarms(newAlarms: MutableList<Alarm>) {
+        this.alarms.clear()  // 기존 알람을 모두 지움
+        this.alarms.addAll(newAlarms)  // 새 알람 목록을 추가
+        notifyDataSetChanged()  // RecyclerView에 데이터 변경을 알림
+    }
 }

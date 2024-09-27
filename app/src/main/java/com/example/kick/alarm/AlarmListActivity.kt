@@ -1,48 +1,45 @@
 package com.example.kick.alarm
 
 import android.content.Context
-import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.kick.R
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 class AlarmListActivity : AppCompatActivity() {
 
     private lateinit var alarmListView: RecyclerView
-    private lateinit var addAlarmButton: FloatingActionButton
     private lateinit var alarmListAdapter: AlarmAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.alarm_home)
+        setContentView(R.layout.alarm_home)  // Correct layout reference
 
-        alarmListView = findViewById(R.id.recyclerViewAlarms)
-        addAlarmButton = findViewById(R.id.btnAddAlarm)
-
-        // 알람 목록 로드 후 어댑터 설정
-        alarmListAdapter = AlarmAdapter(loadAlarms(), this)
+        alarmListView = findViewById(R.id.recyclerViewAlarms)  // Ensure this ID exists in your layout XML
         alarmListView.layoutManager = LinearLayoutManager(this)
-        alarmListView.adapter = alarmListAdapter
 
-        // 알람 추가 버튼 클릭 리스너
-        addAlarmButton.setOnClickListener {
-            startActivity(Intent(this, AddAlarmActivity::class.java))
-        }
+        // Initialize the adapter with the existing alarms
+        alarmListAdapter = AlarmAdapter(loadAlarms().toMutableList(), this)
+        alarmListView.adapter = alarmListAdapter
     }
 
-    // 여러 알람을 불러오는 함수
-    private fun loadAlarms(): MutableList<Alarm> {  // 반환 타입을 MutableList로 변경
+    override fun onResume() {
+        super.onResume()
+        // Reload alarms when returning to this activity
+        val updatedAlarms = loadAlarms().toMutableList()
+        alarmListAdapter.updateAlarms(updatedAlarms)
+    }
+
+    private fun loadAlarms(): List<Alarm> {
         val sharedPref = getSharedPreferences("alarm_prefs", Context.MODE_PRIVATE)
-        val alarmJsonSet = sharedPref.getStringSet("alarms", null) ?: return mutableListOf()  // 빈 MutableList 반환
+        val alarmJsonSet = sharedPref.getStringSet("alarms", null) ?: return emptyList()
 
         val alarms = mutableListOf<Alarm>()
         for (alarmJson in alarmJsonSet) {
             alarms.add(Alarm.fromJson(alarmJson))
         }
 
-        return alarms  // MutableList 반환
+        return alarms
     }
 }
