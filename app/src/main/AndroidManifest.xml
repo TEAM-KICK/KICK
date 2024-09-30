@@ -18,7 +18,7 @@
         android:theme="@style/Theme.KICK"
         tools:targetApi="31">
         <activity
-            android:name=".MainActivity"
+            android:name=".ui.MainActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.KICK">
@@ -30,8 +30,13 @@
         </activity>
 
         <activity
-            android:name=".CameraActivity"
+            android:name=".ui.CameraActivity"
             android:exported="false"
+            android:theme="@style/Theme.KICK" />
+
+        <activity
+            android:name=".alarm.AddAlarmActivity"
+            android:exported="true"
             android:theme="@style/Theme.KICK" />
     </application>
 

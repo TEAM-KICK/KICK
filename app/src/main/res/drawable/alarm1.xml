@@ -1,0 +1,20 @@
+<!-- drawable/alarm1.xml -->
+<vector
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="300dp"
+    android:height="55dp"
+    android:viewportWidth="300"
+    android:viewportHeight="55"
+    >
+    <group>
+        <clip-path
+            android:pathData="M4 0H296C298.209 0 300 1.79086 300 4V51C300 53.2091 298.209 55 296 55H4C1.79086 55 0 53.2091 0 51V4C0 1.79086 1.79086 0 4 0Z"
+            />
+        <path
+            android:pathData="M4 0H296C298.209 0 300 1.79086 300 4V51C300 53.2091 298.209 55 296 55H4C1.79086 55 0 53.2091 0 51V4C0 1.79086 1.79086 0 4 0Z"
+            android:strokeWidth="2"
+            android:strokeColor="#FAE100"
+            />
+    </group>
+</vector>

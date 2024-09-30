@@ -1,8 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- 앱의 전체 테마 설정 -->
     <style name="Theme.KICK" parent="Theme.AppCompat.Light.DarkActionBar">
         <item name="colorPrimary">@color/purple_500</item>
         <item name="colorPrimaryDark">@color/purple_700</item>
         <item name="colorAccent">@color/teal_200</item>
+    </style>
+
+    <!-- TextView에 적용할 텍스트 스타일 -->
+    <style name="kickTextStyle">
+        <item name="android:textSize">25sp</item> <!-- 글자 크기 -->
+        <item name="android:letterSpacing">0.1</item> <!-- 글자 간격 -->
+        <item name="android:textColor">#FFFFFF</item> <!-- 텍스트 색상 -->
+<!--        <item name="android:fontFamily">@font/koulen</item> &lt;!&ndash; 폰트 (Koulen) &ndash;&gt;-->
+<!--        <item name="android:lineHeight">45sp</item> &lt;!&ndash; 줄 간격 &ndash;&gt;-->
     </style>
 </resources>
