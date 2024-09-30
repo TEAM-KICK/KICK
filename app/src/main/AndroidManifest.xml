@@ -38,6 +38,9 @@
             android:name=".alarm.AddAlarmActivity"
             android:exported="true"
             android:theme="@style/Theme.KICK" />
+
+        <receiver android:name=".alarm.AlarmReceiver" />
+
     </application>
 
 </manifest>
