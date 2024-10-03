@@ -39,7 +39,9 @@
             android:exported="true"
             android:theme="@style/Theme.KICK" />
 
-        <receiver android:name=".alarm.AlarmReceiver" />
+        <receiver android:name=".alarm.AlarmReceiver"
+            android:exported="true"
+            android:enabled="true" />
 
     </application>
 
