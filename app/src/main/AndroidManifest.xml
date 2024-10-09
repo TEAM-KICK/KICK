@@ -7,6 +7,9 @@
     <uses-feature android:name="android.hardware.camera" android:required="true" />
     <uses-feature android:name="android.hardware.camera.front" android:required="true" />
 
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -38,6 +41,11 @@
             android:name=".alarm.AddAlarmActivity"
             android:exported="true"
             android:theme="@style/Theme.KICK" />
+
+        <receiver android:name=".alarm.AlarmReceiver"
+            android:exported="true"
+            android:enabled="true" />
+
     </application>
 
 </manifest>
