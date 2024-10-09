@@ -29,6 +29,12 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
+        // Assuming you have a button in your MainActivity layout to start CameraActivity
+        val startCameraButton: Button = findViewById(R.id.btntestface)
+        startCameraButton.setOnClickListener {
+            val intent = Intent(this, CameraActivity::class.java)
+            startActivity(intent)}
+
         // RecyclerView 설정
         alarmListView = findViewById(R.id.recyclerViewAlarms)
         alarmListView.layoutManager = LinearLayoutManager(this)
@@ -36,6 +42,8 @@ class MainActivity : AppCompatActivity() {
         // 알람 목록을 어댑터에 연결
         alarmListAdapter = AlarmAdapter(loadAlarms().toMutableList(), this)
         alarmListView.adapter = alarmListAdapter
+
+
     }
 
     override fun onResume() {
