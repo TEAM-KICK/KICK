@@ -27,8 +27,8 @@ class AddAlarmActivity : AppCompatActivity() {
         saveButton.setOnClickListener {
             val hour = timePicker.hour
             val minute = timePicker.minute
-
-            val alarm = Alarm(0, hour, minute, true) // 새로운 알람 객체 생성
+            val alarmId = System.currentTimeMillis().toInt()
+            val alarm = Alarm(alarmId, hour, minute, true) // 새로운 알람 객체 생성
 
             // 알람 저장
             saveAlarm(alarm)
