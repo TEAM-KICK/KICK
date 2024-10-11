@@ -18,6 +18,7 @@ import com.example.kick.R
 import com.example.kick.alarm.AddAlarmActivity
 import com.example.kick.alarm.Alarm
 import com.example.kick.alarm.AlarmAdapter
+import androidx.recyclerview.widget.ItemTouchHelper
 
 class MainActivity : AppCompatActivity() {
 
@@ -51,7 +52,27 @@ class MainActivity : AppCompatActivity() {
         alarmListAdapter = AlarmAdapter(loadAlarms().toMutableList(), this)
         alarmListView.adapter = alarmListAdapter
 
+        // ItemTouchHelper 콜백 생성
+        val itemTouchHelperCallback = object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT) {
+            override fun onMove(
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                target: RecyclerView.ViewHolder
+            ): Boolean {
+                return false // 드래그 기능은 사용하지 않음
+            }
 
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+                // 스와이프된 아이템의 포지션 가져오기
+                val position = viewHolder.adapterPosition
+                alarmListAdapter.deleteAlarm(position)
+                Log.d("MainActivity", "Alarm deleted at position: $position")
+            }
+        }
+
+        // ItemTouchHelper를 RecyclerView에 연결
+        val itemTouchHelper = ItemTouchHelper(itemTouchHelperCallback)
+        itemTouchHelper.attachToRecyclerView(alarmListView)
     }
 
     override fun onResume() {

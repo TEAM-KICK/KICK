@@ -14,13 +14,20 @@
     <TextView
         android:id="@+id/kick"
         android:layout_width="wrap_content"
-        android:layout_height="45dp"
+        android:layout_height="wrap_content"
         android:layout_marginLeft="30dp"
         android:layout_marginTop="41dp"
         android:gravity="left"
         android:text="@string/app_name"
         android:textAppearance="@style/kickTextStyle" />
 
+    <Button
+        android:id="@+id/btnAddAlarm"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="right|bottom|center"
+        android:contentDescription="Add Alarm Button"
+        android:text="@string/add_button" />
     <!-- 알람 추가 버튼 -->
     <!--        android:background="@drawable/ic_add"-->
 
@@ -30,13 +37,7 @@
         android:layout_height="0dp"
         android:layout_weight="1" />
 
-    <Button
-        android:id="@+id/btnAddAlarm"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="left|bottom|center"
-        android:contentDescription="Add Alarm Button"
-        android:text="@string/add_button" />
+
 
     <Button
         android:id="@+id/btntestface"

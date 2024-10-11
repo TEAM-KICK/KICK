@@ -9,6 +9,8 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.kick.R
 import android.util.Log
+import android.widget.Button
+import com.google.android.material.switchmaterial.SwitchMaterial
 
 class AlarmAdapter(
     private var alarms: MutableList<Alarm>,
@@ -17,7 +19,9 @@ class AlarmAdapter(
 
     class AlarmViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val alarmTime: TextView = itemView.findViewById(R.id.alarmTimeText)
-        val alarmSwitch: Switch = itemView.findViewById(R.id.alarmSwitch)
+//        val alarmSwitch: Switch = itemView.findViewById(R.id.alarmSwitch)
+        val alarmSwitch: SwitchMaterial = itemView.findViewById(R.id.alarmSwitch)
+//        val btnDelete: Button = itemView.findViewById(R.id.btnDelete)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AlarmViewHolder {
@@ -51,6 +55,12 @@ class AlarmAdapter(
 
             // (옵션) 스위치 상태 변경 시 SharedPreferences에 저장하는 로직 추가 가능
         }
+
+        // 삭제 버튼 클릭 리스너 설정
+//        holder.btnDelete.setOnClickListener {
+//            deleteAlarm(position)
+//            Log.d("AlarmAdapter", "Alarm deleted: ${alarm.id}")
+//        }
     }
 
     override fun getItemCount(): Int = alarms.size
@@ -60,5 +70,31 @@ class AlarmAdapter(
         alarms.clear()
         alarms.addAll(newAlarms)
         notifyDataSetChanged()  // 데이터 변경 알림
+    }
+
+    fun deleteAlarm(position: Int) {
+        if (position >= 0 && position < alarms.size) {
+            val alarm = alarms[position]
+
+            // 알람을 목록에서 제거
+            alarms.removeAt(position)
+            notifyItemRemoved(position)
+            notifyItemRangeChanged(position, alarms.size)
+
+            // SharedPreferences에서 알람 제거 로직
+            val sharedPref = context.getSharedPreferences("alarm_prefs", Context.MODE_PRIVATE)
+            val alarmJsonSet = sharedPref.getStringSet("alarms", mutableSetOf())?.toMutableSet() ?: mutableSetOf()
+            alarmJsonSet.remove(alarm.toJson())
+
+            with(sharedPref.edit()) {
+                putStringSet("alarms", alarmJsonSet)
+                apply()
+            }
+
+            // 알람 취소
+            AlarmManagerUtil(context).cancelAlarm(alarm)
+        } else {
+            Log.e("AlarmAdapter", "Invalid position: $position for list size: ${alarms.size}")
+        }
     }
 }
