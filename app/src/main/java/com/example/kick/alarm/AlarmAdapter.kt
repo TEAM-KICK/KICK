@@ -8,6 +8,7 @@ import android.widget.Switch
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.kick.R
+import android.util.Log
 
 class AlarmAdapter(
     private var alarms: MutableList<Alarm>,
@@ -36,7 +37,19 @@ class AlarmAdapter(
 
         holder.alarmSwitch.setOnCheckedChangeListener { _, isChecked ->
             alarm.isActive = isChecked
-            // 스위치 상태 변경 시 SharedPreferences에 저장하는 로직 추가 가능
+
+            val alarmManagerUtil = AlarmManagerUtil(context)
+            if (isChecked) {
+                // 스위치가 켜진 경우 알람 예약
+                alarmManagerUtil.scheduleAlarm(alarm)
+                Log.d("AlarmAdapter", "Alarm scheduled: ${alarm.id}")
+            } else {
+                // 스위치가 꺼진 경우 알람 취소
+                alarmManagerUtil.cancelAlarm(alarm)
+                Log.d("AlarmAdapter", "Alarm canceled: ${alarm.id}")
+            }
+
+            // (옵션) 스위치 상태 변경 시 SharedPreferences에 저장하는 로직 추가 가능
         }
     }
 
