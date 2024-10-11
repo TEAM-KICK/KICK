@@ -12,7 +12,6 @@ import androidx.appcompat.app.AppCompatActivity
 import com.example.kick.R
 import java.util.*
 
-
 class AddAlarmActivity : AppCompatActivity() {
 
     private lateinit var timePicker: TimePicker
@@ -54,5 +53,4 @@ class AddAlarmActivity : AppCompatActivity() {
             apply()  // 데이터를 비동기적으로 저장
         }
     }
-
 }

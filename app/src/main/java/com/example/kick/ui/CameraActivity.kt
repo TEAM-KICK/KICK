@@ -148,7 +148,7 @@ class CameraActivity : AppCompatActivity() {
                 val detectionResults = mutableListOf<DetectionResult>()
                 for ((box, confidence) in boxes) {
                     // 얼굴 이미지 추출
-//                    Log.d("chech", "box.left:${box.left.to}" )
+//                    Log.d("check", "box.left:${box.left.to}" )
                     val faceBitmap = Bitmap.createBitmap(
                         rotatedBitmap,
                         (box.left * rotatedBitmap.width).toInt(),
@@ -156,7 +156,7 @@ class CameraActivity : AppCompatActivity() {
                         ((box.right - box.left) * rotatedBitmap.width).toInt(),
                         ((box.bottom - box.top) * rotatedBitmap.height).toInt()
                     )
-//                    saveBitmapToFile(faceBitmap, "face.png")
+                    saveBitmapToFile(faceBitmap, "face.png")
                     // 감정 분류 수행
                     val emotionIndex = emotionModel.classifyEmotion(faceBitmap)
                     val emotionLabel = getEmotionLabel(emotionIndex)
