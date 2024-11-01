@@ -40,6 +40,7 @@ class AlarmReceiver : BroadcastReceiver() {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val channelId = "alarm_channel"
 
+        Log.d("AlarmReceiver", "Sending notification for alarm: $alarmId at $hour:$minute")
         // Android 8.0 (API 26) 이상에서는 NotificationChannel이 필요
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(

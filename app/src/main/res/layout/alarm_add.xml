@@ -1,27 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp"
+    android:padding="3dp"
     android:background="#000000">
 
-    <!-- TimePicker to select alarm time -->
-
     <!-- Save Button to confirm time selection -->
+
+    <TextView
+        android:id="@+id/bottomText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="210dp"
+        android:layout_marginBottom="16dp"
+        android:text="언제 웃을래 ?"
+        android:textColor="@color/white"
+        android:textSize="30sp" />
 
     <TimePicker
         android:id="@+id/timePicker"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="#FFFFFF"
-        android:timePickerMode="spinner" />
+        android:timePickerMode="spinner"
+        style="@style/Widget.MaterialComponents.TimePicker"
+        android:background="@color/white"
+        android:layout_centerInParent="true"
+        />
 
     <Button
         android:id="@+id/saveButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:text="Save Alarm"
-        android:contentDescription="Save Alarm Button" />
-</LinearLayout>
+        android:layout_gravity="bottom"
+        android:contentDescription="Save Alarm Button"
+        android:text="@string/save_button"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="600dp"
+
+        />
+</RelativeLayout>
