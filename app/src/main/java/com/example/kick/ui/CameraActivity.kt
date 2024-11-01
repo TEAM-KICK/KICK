@@ -17,6 +17,7 @@ import android.graphics.Bitmap
 import android.graphics.Matrix
 import android.os.Handler
 import android.os.Looper
+import android.content.Intent
 
 import android.graphics.RectF
 import com.example.kick.R
@@ -33,9 +34,8 @@ class CameraActivity : AppCompatActivity() {
     private lateinit var previewView: PreviewView
     private lateinit var overlayView: OverlayView
     private lateinit var cameraExecutor: ExecutorService
-//    private val cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
 
-    // YoloModel
+    // Model
     private lateinit var yoloModel: YoloModel
     private lateinit var emotionModel: EmotionModel
 
@@ -126,50 +126,66 @@ class CameraActivity : AppCompatActivity() {
         }
     }
 
+    private var happyCount = 0
     private fun processImage(imageProxy: ImageProxy) {
-            val mainHandler = Handler(Looper.getMainLooper())
-            mainHandler.post {
-                // Rotation 처리
-                val rotationDegrees = imageProxy.imageInfo.rotationDegrees
+//        if (isActivityDestroyed) {
+//            imageProxy.close() // ImageProxy 닫기
+//            return
+//        }
+        val mainHandler = Handler(Looper.getMainLooper())
+        mainHandler.post {
+            // Rotation 처리
+            val rotationDegrees = imageProxy.imageInfo.rotationDegrees
 
-                val bitmap = imageProxy.toBitmap()
-                // 이미지 크기 조정 및 회전
-                val resizedBitmap = resizeBitmap(bitmap)
-                val rotatedBitmap = rotateBitmap(resizedBitmap, rotationDegrees)
+            val bitmap = imageProxy.toBitmap()
+            // 이미지 크기 조정 및 회전
+            val resizedBitmap = resizeBitmap(bitmap)
+            val rotatedBitmap = rotateBitmap(resizedBitmap, rotationDegrees)
 
 //                val rotatedBitmap = rotateBitmap(bitmap, rotationDegrees)
 //                val resizedBitmap = resizeBitmap(rotatedBitmap)
 //                Log.d("Rotate", "Rotated Bitmap width: ${rotatedBitmap.width}, height: ${rotatedBitmap.height}")
 
-                // YOLO 모델을 사용하여 얼굴 탐지
-                val boxes: List<Pair<RectF, Float>> = yoloModel.runInference(rotatedBitmap, overlayView.width, overlayView.height)
+            // YOLO 모델을 사용하여 얼굴 탐지
+            val boxes: List<Pair<RectF, Float>> = yoloModel.runInference(rotatedBitmap, overlayView.width, overlayView.height)
 
-                // 감정 분류 및 박스에 추가
-                val detectionResults = mutableListOf<DetectionResult>()
-                for ((box, confidence) in boxes) {
-                    // 얼굴 이미지 추출
+            // 감정 분류 및 박스에 추가
+            val detectionResults = mutableListOf<DetectionResult>()
+            for ((box, confidence) in boxes) {
+                // 얼굴 이미지 추출
 //                    Log.d("check", "box.left:${box.left.to}" )
-                    val faceBitmap = Bitmap.createBitmap(
-                        rotatedBitmap,
-                        (box.left * rotatedBitmap.width).toInt(),
-                        (box.top * rotatedBitmap.height).toInt(),
-                        ((box.right - box.left) * rotatedBitmap.width).toInt(),
-                        ((box.bottom - box.top) * rotatedBitmap.height).toInt()
-                    )
-                    saveBitmapToFile(faceBitmap, "face.png")
-                    // 감정 분류 수행
-                    val emotionIndex = emotionModel.classifyEmotion(faceBitmap)
-                    val emotionLabel = getEmotionLabel(emotionIndex)
+                val faceBitmap = Bitmap.createBitmap(
+                    rotatedBitmap,
+                    (box.left * rotatedBitmap.width).toInt(),
+                    (box.top * rotatedBitmap.height).toInt(),
+                    ((box.right - box.left) * rotatedBitmap.width).toInt(),
+                    ((box.bottom - box.top) * rotatedBitmap.height).toInt()
+                )
+//                saveBitmapToFile(faceBitmap, "face.png")
+                // 감정 분류 수행
+                val emotionIndex = emotionModel.classifyEmotion(faceBitmap)
+                val emotionLabel = getEmotionLabel(emotionIndex)
 
-                    // DetectionResult 객체에 바운딩 박스, 신뢰도, 감정 레이블 저장
-                    detectionResults.add(DetectionResult(box, confidence, emotionLabel))
+                if (emotionLabel == "Neutral") {
+                    happyCount++
+                    if (happyCount >= 30) {
+                        Toast.makeText(this, "웃음 챌린지 성공 ! 행복하세요 !", Toast.LENGTH_SHORT).show()
+                        finish() // 3초 이상 Happy 감정이면 카메라 멈추기
+                        return@post
+                    }
+                } else {
+                    happyCount = 0 // Reset if not happy
                 }
 
-                // 감정 분류 결과와 함께 박스를 표시
-                overlayView.setBoundingBoxes(detectionResults)
-
-                imageProxy.close()  // ImageProxy 닫기
+                // DetectionResult 객체에 바운딩 박스, 신뢰도, 감정 레이블 저장
+                detectionResults.add(DetectionResult(box, confidence, emotionLabel))
             }
+
+                // 감정 분류 결과와 함께 박스를 표시
+            overlayView.setBoundingBoxes(detectionResults)
+
+            imageProxy.close()  // ImageProxy 닫기
+        }
     }
 
     // 감정 인덱스를 레이블로 변환하는 함수
@@ -230,9 +246,14 @@ class CameraActivity : AppCompatActivity() {
         }
     }
 
+
     override fun onDestroy() {
         super.onDestroy()
-        cameraExecutor.shutdown()
+        try {
+            cameraExecutor.shutdown() // 카메라 작업 스레드 종료
+        } catch (e: Exception) {
+            Log.e("CameraActivity", "Error shutting down camera executor: ${e.message}")
+        }
     }
 
 }
