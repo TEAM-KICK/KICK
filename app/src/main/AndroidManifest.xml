@@ -38,7 +38,7 @@
 
         <activity
             android:name=".ui.CameraActivity"
-            android:exported="false"
+            android:exported="true"
             android:theme="@style/Theme.KICK" />
 
         <activity

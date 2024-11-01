@@ -31,6 +31,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.alarm_home)  // alarm_home.xml을 사용하여 뷰 설정
 
+        checkNotificationPermission()
+
         // ADD 버튼을 누르면 AddAlarmActivity 실행
         val addAlarmButton: Button = findViewById(R.id.btnAddAlarm)
         addAlarmButton.setOnClickListener {
