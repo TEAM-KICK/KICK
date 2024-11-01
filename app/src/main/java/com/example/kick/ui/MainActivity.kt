@@ -91,7 +91,12 @@ class MainActivity : AppCompatActivity() {
         val sharedPref = getSharedPreferences("alarm_prefs", Context.MODE_PRIVATE)
         val alarmJsonSet = sharedPref.getStringSet("alarms", null) ?: return emptyList()
 
-        return alarmJsonSet.map { Alarm.fromJson(it) }
+        val alarms = alarmJsonSet.map { Alarm.fromJson(it) }.toMutableList()
+
+        // 알람을 시간순으로 정렬
+        alarms.sortWith(compareBy({ it.hour }, { it.minute }))
+
+        return alarms
     }
 
 
