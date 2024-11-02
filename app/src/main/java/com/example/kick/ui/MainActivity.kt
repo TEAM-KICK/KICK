@@ -31,6 +31,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.alarm_home)  // alarm_home.xml을 사용하여 뷰 설정
 
+        checkNotificationPermission()
+
         // ADD 버튼을 누르면 AddAlarmActivity 실행
         val addAlarmButton: Button = findViewById(R.id.btnAddAlarm)
         addAlarmButton.setOnClickListener {
@@ -89,7 +91,12 @@ class MainActivity : AppCompatActivity() {
         val sharedPref = getSharedPreferences("alarm_prefs", Context.MODE_PRIVATE)
         val alarmJsonSet = sharedPref.getStringSet("alarms", null) ?: return emptyList()
 
-        return alarmJsonSet.map { Alarm.fromJson(it) }
+        val alarms = alarmJsonSet.map { Alarm.fromJson(it) }.toMutableList()
+
+        // 알람을 시간순으로 정렬
+        alarms.sortWith(compareBy({ it.hour }, { it.minute }))
+
+        return alarms
     }
 
 

@@ -12,6 +12,7 @@ import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import com.example.kick.R
 import com.example.kick.ui.MainActivity
+import com.example.kick.ui.CameraActivity
 
 class AlarmReceiver : BroadcastReceiver() {
 
@@ -25,7 +26,7 @@ class AlarmReceiver : BroadcastReceiver() {
             Log.d("AlarmReceiver", "알람 트리거됨: ID = $alarmId, 시간 = $hour:$minute")
 
             // Toast 메시지 표시 (옵션)
-            Toast.makeText(context, "알람이 울립니다! ID: $alarmId", Toast.LENGTH_LONG).show()
+            Toast.makeText(context, "웃을 시간 입니다 ! ID: $alarmId", Toast.LENGTH_LONG).show()
 
             // 알림(Notification)을 통해 알람 표시
             sendNotification(context, alarmId, hour, minute)
@@ -49,12 +50,16 @@ class AlarmReceiver : BroadcastReceiver() {
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = "알람을 위한 채널"
+                enableLights(true) // 불빛 켜기
+                enableVibration(true) // 진동 설정
             }
             notificationManager.createNotificationChannel(channel)
         }
 
         // 알림 클릭 시 열릴 액티비티 (예: MainActivity)
-        val notificationIntent = Intent(context, MainActivity::class.java)
+        val notificationIntent = Intent(context, CameraActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
         val pendingIntent = PendingIntent.getActivity(
             context, alarmId, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -63,7 +68,7 @@ class AlarmReceiver : BroadcastReceiver() {
         val notification = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(R.drawable.ic_happy)  // 알람 아이콘 설정
             .setContentTitle("알람")
-            .setContentText("알람이 울리고 있습니다! $hour:$minute")
+            .setContentText("웃을 시간 입니다 ! $hour:$minute")
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)  // 알림 클릭 시 알림 제거
             .setPriority(NotificationCompat.PRIORITY_HIGH)

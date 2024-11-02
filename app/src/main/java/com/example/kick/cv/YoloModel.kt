@@ -88,7 +88,7 @@ class YoloModel(private val context: Context) {
             val confidence = outputData[4 * 8400 + i]
 
             // Only consider boxes with confidence above a threshold
-            if (confidence > 0.45) {
+            if (confidence > 0.25) {
 //                Log.d("YoloModel", "xCenter:$xCenter, yCenter:$yCenter, Width:$width, Height:$height, Confidence:$confidence ")
 
                 // 순수한 바운딩 박스 좌표 계산 (YOLO 모델의 640x640 이미지 기준)
