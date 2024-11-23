@@ -9,18 +9,23 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.MappedByteBuffer
 import java.nio.channels.FileChannel
+import android.util.Log
+import org.tensorflow.lite.gpu.GpuDelegate
 
 class EmotionModel(context: Context) {
 
     // TensorFlow Lite 인터프리터
     private lateinit var interpreter: Interpreter
-
+//    private var gpuDelegate: GpuDelegate? = null
     // 모델 입력 크기 및 클래스 수
     private val inputSize = 48  // 모델에서 사용하는 이미지 크기
     private val outputClasses = 7  // 분류할 감정 클래스 수 (7가지 감정)
 
     init {
         // TFLite 모델을 로드
+//        interpreter = Interpreter(loadModelFile(context))
+//        gpuDelegate = GpuDelegate()
+//        val options = Interpreter.Options().addDelegate(gpuDelegate)
         interpreter = Interpreter(loadModelFile(context))
     }
 
@@ -37,14 +42,14 @@ class EmotionModel(context: Context) {
 
     // 이미지를 전처리하여 모델에 입력할 수 있는 ByteBuffer로 변환하는 함수
     private fun preprocessImage(bitmap: Bitmap): ByteBuffer {
-        val imgData = ByteBuffer.allocateDirect(4 * inputSize * inputSize)  // (48x48x1) 이미지 크기
+        val imgData = ByteBuffer.allocateDirect(4 * inputSize * inputSize )  // (48x48x1) 이미지 크기
         imgData.order(ByteOrder.nativeOrder())
 
         val resizedBitmap = Bitmap.createScaledBitmap(bitmap, inputSize, inputSize, true)
         val intValues = IntArray(inputSize * inputSize)
         resizedBitmap.getPixels(intValues, 0, resizedBitmap.width, 0, 0, resizedBitmap.width, resizedBitmap.height)
 
-        // 흑백 이미지 전처리 (0~255 범위의 값을 0~1 범위로 정규화)
+//         흑백 이미지 전처리 (0~255 범위의 값을 0~1 범위로 정규화)
         for (pixel in intValues) {
             val normalizedPixel = (pixel and 0xFF) / 255.0f
             imgData.putFloat(normalizedPixel)
