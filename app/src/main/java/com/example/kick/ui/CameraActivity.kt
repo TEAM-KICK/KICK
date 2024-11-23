@@ -166,9 +166,9 @@ class CameraActivity : AppCompatActivity() {
                 val emotionIndex = emotionModel.classifyEmotion(faceBitmap)
                 val emotionLabel = getEmotionLabel(emotionIndex)
 
-                if (emotionLabel == "Neutral") {
+                if (emotionLabel == "Happy") {
                     happyCount++
-                    if (happyCount >= 30) {
+                    if (happyCount >= 200) {
                         Toast.makeText(this, "웃음 챌린지 성공 ! 행복하세요 !", Toast.LENGTH_SHORT).show()
                         finish() // 3초 이상 Happy 감정이면 카메라 멈추기
                         return@post
@@ -191,12 +191,20 @@ class CameraActivity : AppCompatActivity() {
     // 감정 인덱스를 레이블로 변환하는 함수
     private fun getEmotionLabel(emotionIndex: Int): String {
         return when (emotionIndex) {
-            0 -> "Happy"
-            1 -> "Sad"
-            2 -> "Angry"
-            3 -> "Surprise"
-            4 -> "Fear"
-            5 -> "Disgust"
+//            0 -> "Happy"
+//            1 -> "Sad"
+//            2 -> "Angry"
+//            3 -> "Surprise"
+//            4 -> "Fear"
+//            5 -> "Disgust"
+//            6 -> "Neutral"
+//            else -> "Unknown"
+            0 -> "Angry"
+            1 -> "Disgust"
+            2 -> "Fear"
+            3 -> "Happy"
+            4 -> "Sad"
+            5 -> "Surprise"
             6 -> "Neutral"
             else -> "Unknown"
         }
